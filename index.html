@@ -283,7 +283,7 @@ input[type=date].inp,input[type=time].inp{-webkit-appearance:none;appearance:non
 <script src="koyomi.js"></script>
 <script>
 'use strict';
-const VERSION = 'ver 1.01';
+const VERSION = 'ver 1.02';
 const K = window.Koyomi;
 const $ = s => document.querySelector(s);
 const pad = n => String(n).padStart(2, '0');
@@ -303,8 +303,9 @@ const LS = {
   get(k, d) { try { const v = localStorage.getItem('koyomi.' + k); return v ? JSON.parse(v) : d; } catch (e) { return d; } },
   set(k, v) { try { localStorage.setItem('koyomi.' + k, JSON.stringify(v)); } catch (e) { toast('保存できませんでした'); } }
 };
-let S = LS.get('settings', null) || { me: null, names: { f: 'お父さん', m: 'お母さん' }, show: 'both', fs: 1, cellRekichu: true };
+let S = LS.get('settings', null) || { me: null, names: { f: '美之', m: '博美' }, show: 'both', fs: 1, cellRekichu: true };
 let EV = LS.get('events', []);
+if (S.names.f === 'お父さん' && S.names.m === 'お母さん') { S.names = { f: '美之', m: '博美' }; LS.set('settings', S); }
 const saveS = () => LS.set('settings', S);
 const saveEV = () => LS.set('events', EV);
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
@@ -652,7 +653,7 @@ $('#sBody').onclick = e => {
   else if (b.id === 'sExp') exportJson();
 };
 $('#sBody').addEventListener('change', e => {
-  if (e.target.id === 'sNf' || e.target.id === 'sNm') { S.names = { f: $('#sNf').value.trim() || 'お父さん', m: $('#sNm').value.trim() || 'お母さん' }; saveS(); }
+  if (e.target.id === 'sNf' || e.target.id === 'sNm') { S.names = { f: $('#sNf').value.trim() || '美之', m: $('#sNm').value.trim() || '博美' }; saveS(); }
   if (e.target.id === 'sDot') { S.cellRekichu = e.target.checked; saveS(); }
 });
 $('#sBack').onclick = () => { hide('settings'); render(); };

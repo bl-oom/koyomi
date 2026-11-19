@@ -28,6 +28,18 @@ body{position:fixed;inset:0;overflow:hidden}
 button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer}
 .mincho{font-family:"Hiragino Mincho ProN","Yu Mincho","Noto Serif JP",serif}
 
+/* ===== 背景 ===== */
+#bg{position:absolute;inset:0;z-index:0;display:none;background:#000}
+#bg img,#bg video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+body.hasbg #bg{display:block}
+body.hasbg #main{z-index:1;background:transparent}
+body.hasbg #head,body.hasbg #week{background:rgba(247,243,234,var(--veil))}
+body.hasbg #grid{background:rgba(227,220,207,calc(var(--veil) * .8))}
+body.hasbg .cell{background:rgba(255,253,248,var(--veil))}
+body.hasbg .cell.out{background:rgba(243,239,230,calc(var(--veil) + .08))}
+body.hasbg #bar{background:rgba(255,253,248,calc(var(--veil) + .1))}
+.bgprev{width:100%;aspect-ratio:16/10;border-radius:12px;object-fit:cover;background:#e9e2d4;display:block;margin-bottom:8px}
+
 /* ===== メイン画面 ===== */
 #main{position:absolute;inset:0;display:flex;flex-direction:column;padding-top:var(--safe-t)}
 #head{height:64px;flex:none;display:grid;grid-template-columns:64px 1fr 64px;align-items:center}
@@ -173,6 +185,7 @@ input[type=date].inp,input[type=time].inp{-webkit-appearance:none;appearance:non
 </style>
 </head>
 <body>
+<div id="bg"></div>
 <div id="main">
   <div id="head">
     <button class="navbtn" id="prev" aria-label="前の月">‹</button>
@@ -277,13 +290,14 @@ input[type=date].inp,input[type=time].inp{-webkit-appearance:none;appearance:non
 <div id="toast"></div>
 <div id="busy"><div id="busyTx">読み込み中…</div></div>
 <input type="file" id="filePhoto" accept="image/*" multiple hidden>
+<input type="file" id="fileBg" accept="image/*,video/*" hidden>
 <input type="file" id="fileCsv" accept=".csv,.txt,.json,text/csv,application/json" hidden>
 
 <script src="koyomi-data.js"></script>
 <script src="koyomi.js"></script>
 <script>
 'use strict';
-const VERSION = 'ver 1.02';
+const VERSION = 'ver 1.03';
 const K = window.Koyomi;
 const $ = s => document.querySelector(s);
 const pad = n => String(n).padStart(2, '0');
@@ -315,13 +329,16 @@ let db;
 function idb() {
   return new Promise((res, rej) => {
     if (db) return res(db);
-    const r = indexedDB.open('koyomi', 1);
-    r.onupgradeneeded = () => { const s = r.result.createObjectStore('photos', { keyPath: 'id' }); s.createIndex('date', 'date'); };
+    const r = indexedDB.open('koyomi', 2);
+    r.onupgradeneeded = () => { const d = r.result; if (!d.objectStoreNames.contains('photos')) { const s = d.createObjectStore('photos', { keyPath: 'id' }); s.createIndex('date', 'date'); } if (!d.objectStoreNames.contains('misc')) d.createObjectStore('misc', { keyPath: 'id' }); };
     r.onsuccess = () => { db = r.result; res(db); };
     r.onerror = () => rej(r.error);
   });
 }
 async function photoPut(p) { const d = await idb(); return new Promise((res, rej) => { const t = d.transaction('photos', 'readwrite'); t.objectStore('photos').put(p); t.oncomplete = res; t.onerror = () => rej(t.error); }); }
+async function miscGet(id) { const d = await idb(); return new Promise(res => { const r = d.transaction('misc').objectStore('misc').get(id); r.onsuccess = () => res(r.result || null); r.onerror = () => res(null); }); }
+async function miscPut(v) { const d = await idb(); return new Promise((res, rej) => { const t = d.transaction('misc', 'readwrite'); t.objectStore('misc').put(v); t.oncomplete = res; t.onerror = () => rej(t.error); }); }
+async function miscDel(id) { const d = await idb(); return new Promise(res => { const t = d.transaction('misc', 'readwrite'); t.objectStore('misc').delete(id); t.oncomplete = res; }); }
 async function photoDel(id) { const d = await idb(); return new Promise(res => { const t = d.transaction('photos', 'readwrite'); t.objectStore('photos').delete(id); t.oncomplete = res; }); }
 async function photosOn(date) { const d = await idb(); return new Promise(res => { const out = []; const r = d.transaction('photos').objectStore('photos').index('date').openCursor(IDBKeyRange.only(date)); r.onsuccess = () => { const c = r.result; if (c) { out.push(c.value); c.continue(); } else res(out.sort((a, b) => (a.taken || '').localeCompare(b.taken || ''))); }; }); }
 async function photoCounts(from, to) { const d = await idb(); return new Promise(res => { const out = {}; const r = d.transaction('photos').objectStore('photos').index('date').openKeyCursor(IDBKeyRange.bound(from, to)); r.onsuccess = () => { const c = r.result; if (c) { out[c.key] = (out[c.key] || 0) + 1; c.continue(); } else res(out); }; }); }
@@ -625,6 +642,37 @@ $('#vDel').onclick = async () => {
   g.addEventListener('touchend', e => { if (x0 == null) return; const dx = e.changedTouches[0].clientX - x0; if (dx < -50) $('#vNext').onclick(); if (dx > 50) $('#vPrev').onclick(); x0 = null; }, { passive: true });
 })();
 
+// ===== 背景 =====
+const VEILS = [[.5, 'うすく'], [.68, 'ふつう'], [.82, 'しっかり']];
+let bgUrl = null, bgType = null;
+async function applyBg() {
+  const rec = await miscGet('bg').catch(() => null);
+  const box = $('#bg');
+  if (bgUrl) { URL.revokeObjectURL(bgUrl); bgUrl = null; }
+  box.innerHTML = '';
+  document.documentElement.style.setProperty('--veil', S.veil || .68);
+  if (!rec) { document.body.classList.remove('hasbg'); bgType = null; return; }
+  bgUrl = URL.createObjectURL(rec.blob); bgType = rec.type;
+  if (rec.type === 'video') {
+    const v = document.createElement('video'); v.src = bgUrl; v.muted = true; v.loop = true; v.autoplay = true; v.playsInline = true;
+    v.setAttribute('playsinline', ''); v.setAttribute('muted', ''); box.appendChild(v); v.play().catch(() => { });
+  } else { const im = new Image(); im.src = bgUrl; box.appendChild(im); }
+  document.body.classList.add('hasbg');
+}
+document.addEventListener('visibilitychange', () => { const v = $('#bg video'); if (v && !document.hidden) v.play().catch(() => { }); });
+$('#fileBg').onchange = async e => {
+  const f = e.target.files[0]; if (!f) return;
+  const isVideo = f.type.startsWith('video/');
+  if (isVideo && f.size > 150 * 1024 * 1024) { alertBox('動画が大きすぎます（150MBまで）。\n短めの動画を選んでください。'); return; }
+  busy('背景を入れています…');
+  try {
+    let blob = f;
+    if (!isVideo) blob = (await resize(f)).full;
+    await miscPut({ id: 'bg', type: isVideo ? 'video' : 'image', blob, name: f.name, added: Date.now() });
+    await applyBg(); busy(false); toast('背景を変えました'); openSettings();
+  } catch (err) { busy(false); alertBox('背景に入れられませんでした'); }
+};
+
 // ===== 設定 =====
 function openSettings() {
   const fsBtns = [[1, '標準'], [1.15, '大きめ'], [1.3, '特大']].map(([v, t]) => `<button data-v="${v}" class="${S.fs == v ? 'on' : ''}">${t}</button>`).join('');
@@ -633,6 +681,11 @@ function openSettings() {
     <p>新しく入れる予定は、ここで選んだ人の予定になります。</p></div>
   <div class="card"><h4>呼び方</h4><div class="row2"><input class="inp" id="sNf" value="${esc(S.names.f)}"><input class="inp" id="sNm" value="${esc(S.names.m)}"></div></div>
   <div class="card"><h4>文字の大きさ</h4><div class="seg" id="sFs">${fsBtns}</div></div>
+  <div class="card"><h4>背景の写真・動画</h4><div id="sBgPrev"></div>
+    <p>好きな写真か動画を1つ選べます。動画はくりかえし流れます（音は出ません）。</p>
+    <label style="font-size:14px;font-weight:700;color:var(--sub)">文字を見やすくする白さ</label>
+    <div class="seg" id="sVeil" style="margin-top:6px">${VEILS.map(([v, t]) => `<button data-v="${v}" class="${(S.veil || .68) == v ? 'on' : ''}">${t}</button>`).join('')}</div>
+    <div class="row2" style="margin-top:8px"><button class="wbtn" id="sBg">写真・動画を選ぶ</button><button class="wbtn" id="sBgOff">背景をなくす</button></div></div>
   <div class="card"><h4>表示</h4><label class="chk"><input type="checkbox" id="sDot" ${S.cellRekichu ? 'checked' : ''}>天赦日・一粒万倍日に金色の印を付ける</label></div>
   <div class="card"><h4>前のカレンダーの予定を取り込む</h4>
     <p>CSVファイル（日付・時間・タイトル・メモ）を読み込んで、予定に入れます。</p>
@@ -643,11 +696,17 @@ function openSettings() {
   <div class="card"><h4>いま入っている予定</h4><p>${S.names.f}：${EV.filter(e => e.owner === 'f').length}件　${S.names.m}：${EV.filter(e => e.owner === 'm').length}件</p></div>
   <div class="ver">こよみ帳 ${VERSION}<br>© 2026 bl-oom Inc.</div>`;
   show('settings');
+  const pv = $('#sBgPrev');
+  if (bgUrl) { const el = document.createElement(bgType === 'video' ? 'video' : 'img'); el.className = 'bgprev'; el.src = bgUrl; if (bgType === 'video') { el.muted = true; el.loop = true; el.autoplay = true; el.playsInline = true; el.setAttribute('playsinline', ''); } pv.appendChild(el); if (el.play) el.play().catch(() => { }); }
+  else pv.innerHTML = '<div class="bgprev" style="display:flex;align-items:center;justify-content:center;color:var(--sub);font-size:14px">いまは背景なし</div>';
 }
 $('#sBody').onclick = e => {
   const b = e.target.closest('button'); if (!b) return;
   if (b.closest('#sMe')) { S.me = b.dataset.v; saveS(); openSettings(); }
   else if (b.closest('#sFs')) { S.fs = Number(b.dataset.v); saveS(); document.documentElement.style.setProperty('--fs', S.fs); openSettings(); }
+  else if (b.closest('#sVeil')) { S.veil = Number(b.dataset.v); saveS(); document.documentElement.style.setProperty('--veil', S.veil); document.querySelectorAll('#sVeil button').forEach(x => x.classList.toggle('on', x === b)); }
+  else if (b.id === 'sBg') { $('#fileBg').value = ''; $('#fileBg').click(); }
+  else if (b.id === 'sBgOff') { miscDel('bg').then(applyBg).then(() => { toast('背景をなくしました'); openSettings(); }); }
   else if (b.id === 'sCsv') { importMode = 'csv'; $('#fileCsv').value = ''; $('#fileCsv').click(); }
   else if (b.id === 'sImp') { importMode = 'json'; $('#fileCsv').value = ''; $('#fileCsv').click(); }
   else if (b.id === 'sExp') exportJson();
@@ -746,7 +805,7 @@ async function firstRun() {
   S.me = who; saveS();
 }
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => { });
-render().then(firstRun);
+applyBg().catch(() => { }).finally(() => render().then(firstRun));
 document.addEventListener('visibilitychange', () => { if (!document.hidden && !$('#day').classList.contains('on')) render(); });
 </script>
 </body>

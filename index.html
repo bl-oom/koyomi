@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="こよみ帳">
+<meta name="theme-color" content="#f7f3ea">
+<title>こよみ帳</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" href="icon-192.png">
+<style>
+:root{
+  --bg:#f7f3ea; --paper:#fffdf8; --ink:#2b2622; --sub:#7a7066; --line:#e3dccf;
+  --sun:#c4432e; --sat:#2d5f8f; --gold:#b8892b; --accent:#6b4f2a;
+  --f:#2f6fa8; --m:#c0466a;
+  --fs:1;
+  --safe-t:env(safe-area-inset-top); --safe-b:env(safe-area-inset-bottom);
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);
+  font-family:-apple-system,"Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP",sans-serif;
+  -webkit-user-select:none;user-select:none;overscroll-behavior:none}
+body{position:fixed;inset:0;overflow:hidden}
+button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer}
+.mincho{font-family:"Hiragino Mincho ProN","Yu Mincho","Noto Serif JP",serif}
+
+/* ===== メイン画面 ===== */
+#main{position:absolute;inset:0;display:flex;flex-direction:column;padding-top:var(--safe-t)}
+#head{height:64px;flex:none;display:grid;grid-template-columns:64px 1fr 64px;align-items:center}
+.navbtn{height:56px;width:56px;margin:0 4px;border-radius:50%;font-size:30px;color:var(--accent);display:flex;align-items:center;justify-content:center}
+.navbtn:active{background:#ece4d4}
+#title{text-align:center;line-height:1.1}
+#title .ym{font-size:calc(26px*var(--fs));font-weight:700;letter-spacing:.02em}
+#title .ym small{font-size:.6em;font-weight:600;margin-left:2px}
+#title .sub{font-size:calc(12px*var(--fs));color:var(--sub);margin-top:2px}
+#week{flex:none;display:grid;grid-template-columns:repeat(7,1fr);font-size:calc(13px*var(--fs));font-weight:700;text-align:center;padding:4px 2px;border-bottom:1px solid var(--line)}
+#week div:first-child{color:var(--sun)} #week div:last-child{color:var(--sat)}
+#grid{flex:1;display:grid;grid-template-columns:repeat(7,1fr);grid-template-rows:repeat(6,1fr);min-height:0;background:var(--line);gap:1px;border-bottom:1px solid var(--line)}
+.cell{background:var(--paper);padding:2px 2px 0;overflow:hidden;position:relative;display:flex;flex-direction:column;min-width:0}
+.cell.out{background:#f3efe6}.cell.out>*{opacity:.38}
+.cell.today{box-shadow:inset 0 0 0 2.5px var(--gold)}
+.cell .top{display:flex;align-items:baseline;justify-content:space-between;gap:1px}
+.cell .num{font-size:calc(17px*var(--fs));font-weight:700;line-height:1.15}
+.cell.today .num{background:var(--gold);color:#fff;border-radius:6px;padding:0 4px}
+.cell .rk{font-size:calc(9.5px*var(--fs));color:var(--sub);white-space:nowrap}
+.cell .rk.taian{color:var(--sun);font-weight:700}
+.cell.sun .num,.cell.hol .num{color:var(--sun)} .cell.sat .num{color:var(--sat)}
+.cell.today.sun .num,.cell.today.hol .num,.cell.today.sat .num{color:#fff}
+.cell .hn{font-size:calc(8.5px*var(--fs));color:var(--sun);white-space:nowrap;overflow:hidden;text-overflow:clip;line-height:1.2}
+.cell .marks{position:absolute;right:2px;bottom:2px;display:flex;gap:2px;align-items:center}
+.cell .dot{width:6px;height:6px;border-radius:50%;background:var(--gold)}
+.cell .cam{font-size:9px;line-height:1;background:#efe6d3;border-radius:4px;padding:1px 2px;color:var(--accent);font-weight:700}
+.ev{font-size:calc(9.5px*var(--fs));line-height:1.25;white-space:nowrap;overflow:hidden;border-radius:3px;padding:0 2px;margin-top:1px;color:#fff}
+.more{font-size:calc(9px*var(--fs));color:var(--sub)}
+#bar{flex:none;height:calc(70px + var(--safe-b));padding-bottom:var(--safe-b);display:grid;grid-template-columns:repeat(5,1fr);background:var(--paper);border-top:1px solid var(--line)}
+.bbtn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-size:12px;font-weight:700;color:var(--accent)}
+.bbtn .ic{font-size:24px;line-height:1}
+.bbtn:active{background:#f0e9db}
+
+/* ===== 重ね画面（共通） ===== */
+.sheet{position:absolute;inset:0;background:var(--bg);display:none;flex-direction:column;padding-top:var(--safe-t);z-index:10}
+.sheet.on{display:flex}
+.shead{height:60px;flex:none;display:grid;grid-template-columns:96px 1fr 96px;align-items:center;border-bottom:1px solid var(--line);background:var(--paper)}
+.shead .t{text-align:center;font-size:18px;font-weight:700}
+.hbtn{height:44px;margin:0 8px;border-radius:10px;font-size:16px;font-weight:700;color:var(--accent);display:flex;align-items:center;justify-content:center}
+.hbtn:active{background:#ece4d4}
+.hbtn.primary{background:var(--accent);color:#fff}
+.sbody{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px 16px 24px}
+.sfoot{flex:none;height:calc(76px + var(--safe-b));padding:10px 12px calc(10px + var(--safe-b));display:grid;grid-template-columns:1fr 1fr;gap:10px;background:var(--paper);border-top:1px solid var(--line)}
+.big{border-radius:14px;font-size:17px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:6px;background:#efe6d3;color:var(--accent)}
+.big.primary{background:var(--accent);color:#fff}
+.big.danger{background:#f6e2dd;color:var(--sun)}
+.big:active{filter:brightness(.93)}
+.hide{visibility:hidden}
+
+/* 日の詳細 */
+.dhead{display:flex;align-items:flex-end;gap:12px}
+.dhead .dd{font-size:calc(54px*var(--fs));font-weight:700;line-height:1}
+.dhead .dw{font-size:calc(22px*var(--fs));font-weight:700;padding-bottom:4px}
+.dhead .dy{font-size:calc(13px*var(--fs));color:var(--sub);padding-bottom:6px}
+.dsub{margin-top:8px;font-size:calc(15px*var(--fs));color:var(--sub)}
+.dsub b{color:var(--ink)}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.chip{font-size:calc(14px*var(--fs));padding:5px 10px;border-radius:999px;background:#efe6d3;color:var(--accent);font-weight:700}
+.chip.good{background:#f8ecd0;color:#8a5d00}
+.chip.bad{background:#ece9e4;color:#6d665e}
+.chip.hol{background:#f6e2dd;color:var(--sun)}
+.chip.rk{background:#fff;border:1.5px solid var(--line);color:var(--ink)}
+.chip.rk.taian{border-color:var(--sun);color:var(--sun)}
+.sec{margin-top:22px}
+.sec h3{font-size:calc(15px*var(--fs));margin:0 0 8px;color:var(--sub);font-weight:700;display:flex;align-items:center;gap:6px}
+.evrow{display:flex;gap:10px;align-items:stretch;background:var(--paper);border-radius:12px;padding:12px;margin-bottom:8px;border:1px solid var(--line)}
+.evrow .bar{width:6px;border-radius:3px;flex:none}
+.evrow .tm{font-size:calc(14px*var(--fs));color:var(--sub);min-width:52px;font-weight:700}
+.evrow .tt{font-size:calc(18px*var(--fs));font-weight:700;word-break:break-all}
+.evrow .mm{font-size:calc(14px*var(--fs));color:var(--sub);margin-top:4px;white-space:pre-wrap;word-break:break-all}
+.evrow .who{font-size:12px;font-weight:700;color:#fff;border-radius:6px;padding:1px 6px;display:inline-block;margin-bottom:3px}
+.empty{color:var(--sub);font-size:calc(15px*var(--fs));padding:8px 2px}
+.photos{display:grid;grid-template-columns:repeat(3,1fr);gap:4px}
+.photos img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:8px;background:#e9e2d4;display:block}
+
+/* 予定の入力 */
+.fld{margin-bottom:18px}
+.fld label{display:block;font-size:14px;font-weight:700;color:var(--sub);margin-bottom:6px}
+.inp{width:100%;font:inherit;font-size:19px;padding:12px;border-radius:12px;border:1.5px solid var(--line);background:var(--paper);color:var(--ink);-webkit-user-select:text;user-select:text}
+textarea.inp{min-height:90px;resize:none}
+.seg{display:flex;background:#ece4d4;border-radius:12px;padding:3px;gap:3px}
+.seg button{flex:1;height:44px;border-radius:9px;font-size:16px;font-weight:700;color:var(--sub)}
+.seg button.on{background:var(--paper);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.12)}
+.stamps{display:grid;grid-template-columns:repeat(6,1fr);gap:6px}
+.stamps button{height:48px;border-radius:12px;background:var(--paper);border:1.5px solid var(--line);font-size:24px}
+.stamps button.on{border-color:var(--accent);background:#f3e9d6}
+.colors{display:flex;gap:10px;flex-wrap:wrap}
+.colors button{width:40px;height:40px;border-radius:50%;border:3px solid transparent}
+.colors button.on{border-color:var(--ink)}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}.row2>div{min-width:0}
+input[type=date].inp,input[type=time].inp{-webkit-appearance:none;appearance:none;min-height:52px;min-width:0}
+
+/* 写真ビューア */
+#viewer{background:#111}
+#viewer .shead{background:#111;border-color:#222}
+#viewer .shead .t,#viewer .hbtn{color:#eee}
+#viewer .vimg{flex:1;display:flex;align-items:center;justify-content:center;min-height:0}
+#viewer .vimg img{max-width:100%;max-height:100%;object-fit:contain}
+#viewer .sfoot{background:#111;border-color:#222;grid-template-columns:1fr 1fr 1fr}
+#viewer .big{background:#2a2a2a;color:#eee}
+#viewer .big.danger{background:#3a1f1c;color:#f29a8c}
+
+/* 設定 */
+.card{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:14px}
+.card h4{margin:0 0 10px;font-size:16px}
+.card p{margin:6px 0;font-size:14px;color:var(--sub);line-height:1.6}
+.wbtn{width:100%;height:50px;border-radius:12px;background:#efe6d3;color:var(--accent);font-weight:700;font-size:16px;margin-top:8px}
+.ver{text-align:center;color:var(--sub);font-size:12px;margin:20px 0 8px}
+.chk{display:flex;align-items:center;gap:10px;font-size:16px;padding:8px 0}
+.chk input{width:22px;height:22px}
+
+/* ダイアログ */
+#dlg{position:absolute;inset:0;background:rgba(40,30,20,.45);display:none;align-items:center;justify-content:center;z-index:50;padding:24px}
+#dlg.on{display:flex}
+#dlg .box{background:var(--paper);border-radius:18px;padding:20px;width:100%;max-width:400px;max-height:80vh;overflow:auto}
+#dlg .msg{font-size:17px;line-height:1.6;white-space:pre-wrap}
+#dlg .btns{display:grid;gap:10px;margin-top:18px}
+#dlg .btns button{height:52px}
+#toast{position:absolute;left:50%;bottom:calc(90px + var(--safe-b));transform:translateX(-50%);background:rgba(43,38,34,.92);color:#fff;padding:10px 18px;border-radius:999px;font-size:15px;z-index:60;display:none;white-space:nowrap}
+#busy{position:absolute;inset:0;background:rgba(247,243,234,.85);z-index:70;display:none;align-items:center;justify-content:center;font-size:18px;font-weight:700;color:var(--accent);text-align:center}
+#busy.on{display:flex}
+</style>
+</head>
+<body>
+<div id="main">
+  <div id="head">
+    <button class="navbtn" id="prev" aria-label="前の月">‹</button>
+    <div id="title"></div>
+    <button class="navbtn" id="next" aria-label="次の月">›</button>
+  </div>
+  <div id="week"><div>日</div><div>月</div><div>火</div><div>水</div><div>木</div><div>金</div><div>土</div></div>
+  <div id="grid"></div>
+  <div id="bar">
+    <button class="bbtn" id="bToday"><span class="ic">◎</span>今日</button>
+    <button class="bbtn" id="bAdd"><span class="ic">＋</span>予定</button>
+    <button class="bbtn" id="bPhoto"><span class="ic">📷</span>写真</button>
+    <button class="bbtn" id="bWho"><span class="ic" id="whoIc">👥</span><span id="whoTx">ふたり</span></button>
+    <button class="bbtn" id="bSet"><span class="ic">⚙︎</span>設定</button>
+  </div>
+</div>
+
+<!-- 日の詳細 -->
+<div class="sheet" id="day">
+  <div class="shead">
+    <button class="hbtn" id="dBack">‹ 戻る</button>
+    <div class="t" id="dTitle"></div>
+    <div style="display:flex;justify-content:flex-end"><button class="hbtn" id="dPrev" style="width:40px;margin:0">‹</button><button class="hbtn" id="dNext" style="width:40px;margin:0 8px 0 0">›</button></div>
+  </div>
+  <div class="sbody" id="dBody"></div>
+  <div class="sfoot">
+    <button class="big primary" id="dAdd">＋ 予定を入れる</button>
+    <button class="big" id="dPhoto">📷 写真を入れる</button>
+  </div>
+</div>
+
+<!-- 予定の入力 -->
+<div class="sheet" id="edit">
+  <div class="shead">
+    <button class="hbtn" id="eCancel">やめる</button>
+    <div class="t" id="eTitle">予定</div>
+    <button class="hbtn primary" id="eSave">保存</button>
+  </div>
+  <div class="sbody">
+    <div class="fld"><label>なにをする？</label><input class="inp" id="fTitle" placeholder="例）病院、ゴルフ、法事"></div>
+    <div class="fld"><label>マーク</label><div class="stamps" id="fStamps"></div></div>
+    <div class="fld"><label>だれの予定？</label><div class="seg" id="fOwner"><button data-v="f"></button><button data-v="m"></button></div></div>
+    <div class="row2 fld">
+      <div><label>日にち</label><input class="inp" type="date" id="fDate"></div>
+      <div><label>おわりの日（連日）</label><input class="inp" type="date" id="fEnd"></div>
+    </div>
+    <div class="fld"><label>時間</label><div class="seg" id="fAllday"><button data-v="1">一日じゅう</button><button data-v="0">時間を決める</button></div></div>
+    <div class="row2 fld" id="fTimes">
+      <div><label>はじまり</label><input class="inp" type="time" id="fStart"></div>
+      <div><label>おわり</label><input class="inp" type="time" id="fStop"></div>
+    </div>
+    <div class="fld"><label>くりかえし</label><div class="seg" id="fRepeat"><button data-v="none">なし</button><button data-v="week">毎週</button><button data-v="month">毎月</button><button data-v="year">毎年</button></div></div>
+    <div class="fld"><label>色</label><div class="colors" id="fColors"></div></div>
+    <div class="fld"><label>メモ</label><textarea class="inp" id="fMemo" placeholder="場所や持ち物など"></textarea></div>
+  </div>
+  <div class="sfoot">
+    <button class="big danger" id="eDel">削除する</button>
+    <button class="big primary" id="eSave2">保存する</button>
+  </div>
+</div>
+
+<!-- 写真ビューア -->
+<div class="sheet" id="viewer">
+  <div class="shead">
+    <button class="hbtn" id="vBack">‹ 戻る</button>
+    <div class="t" id="vTitle"></div>
+    <div></div>
+  </div>
+  <div class="vimg" id="vImg"><img alt=""></div>
+  <div class="sfoot">
+    <button class="big" id="vPrev">‹ 前</button>
+    <button class="big danger" id="vDel">削除</button>
+    <button class="big" id="vNext">次 ›</button>
+  </div>
+</div>
+
+<!-- 設定 -->
+<div class="sheet" id="settings">
+  <div class="shead">
+    <button class="hbtn" id="sBack">‹ 戻る</button>
+    <div class="t">設定</div>
+    <div></div>
+  </div>
+  <div class="sbody" id="sBody"></div>
+</div>
+
+<div id="dlg"><div class="box"><div class="msg" id="dlgMsg"></div><div id="dlgExtra"></div><div class="btns" id="dlgBtns"></div></div></div>
+<div id="toast"></div>
+<div id="busy"><div id="busyTx">読み込み中…</div></div>
+<input type="file" id="filePhoto" accept="image/*" multiple hidden>
+<input type="file" id="fileCsv" accept=".csv,.txt,.json,text/csv,application/json" hidden>
+
+<script src="koyomi-data.js"></script>
+<script src="koyomi.js"></script>
+<script>
+'use strict';
+const VERSION = 'ver 1.00';
+const K = window.Koyomi;
+const $ = s => document.querySelector(s);
+const pad = n => String(n).padStart(2, '0');
+const ymd = (y, m, d) => `${y}-${pad(m)}-${pad(d)}`;
+const parseYmd = s => { const [y, m, d] = s.split('-').map(Number); return { y, m, d }; };
+const dnOf = s => { const p = parseYmd(s); return K.dn(p.y, p.m, p.d); };
+const strOf = n => { const g = K.fromDn(n); return ymd(g.y, g.m, g.d); };
+const WD = '日月火水木金土';
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const GOOD = ['一粒万倍日', '天赦日', '寅の日', '巳の日', '己巳の日', '甲子の日', '天恩日'];
+const BAD = ['不成就日', '三隣亡', '十方暮', '八専'];
+const STAMPS = ['', '🏥', '💊', '🍚', '🎂', '⛳', '🚗', '✈️', '🛒', '🙏', '👪', '📞', '💰', '♨️', '🌸', '🎉', '✂️', '⭐'];
+const COLORS = ['#2f6fa8', '#c0466a', '#3f8f5a', '#c9822b', '#7a52a8', '#5f6b75', '#c4432e', '#2a8f93'];
+
+// ===== 保存（この端末） =====
+const LS = {
+  get(k, d) { try { const v = localStorage.getItem('koyomi.' + k); return v ? JSON.parse(v) : d; } catch (e) { return d; } },
+  set(k, v) { try { localStorage.setItem('koyomi.' + k, JSON.stringify(v)); } catch (e) { toast('保存できませんでした'); } }
+};
+let S = LS.get('settings', null) || { me: null, names: { f: 'お父さん', m: 'お母さん' }, show: 'both', fs: 1, cellRekichu: true };
+let EV = LS.get('events', []);
+const saveS = () => LS.set('settings', S);
+const saveEV = () => LS.set('events', EV);
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+
+// 写真（IndexedDB）
+let db;
+function idb() {
+  return new Promise((res, rej) => {
+    if (db) return res(db);
+    const r = indexedDB.open('koyomi', 1);
+    r.onupgradeneeded = () => { const s = r.result.createObjectStore('photos', { keyPath: 'id' }); s.createIndex('date', 'date'); };
+    r.onsuccess = () => { db = r.result; res(db); };
+    r.onerror = () => rej(r.error);
+  });
+}
+async function photoPut(p) { const d = await idb(); return new Promise((res, rej) => { const t = d.transaction('photos', 'readwrite'); t.objectStore('photos').put(p); t.oncomplete = res; t.onerror = () => rej(t.error); }); }
+async function photoDel(id) { const d = await idb(); return new Promise(res => { const t = d.transaction('photos', 'readwrite'); t.objectStore('photos').delete(id); t.oncomplete = res; }); }
+async function photosOn(date) { const d = await idb(); return new Promise(res => { const out = []; const r = d.transaction('photos').objectStore('photos').index('date').openCursor(IDBKeyRange.only(date)); r.onsuccess = () => { const c = r.result; if (c) { out.push(c.value); c.continue(); } else res(out.sort((a, b) => (a.taken || '').localeCompare(b.taken || ''))); }; }); }
+async function photoCounts(from, to) { const d = await idb(); return new Promise(res => { const out = {}; const r = d.transaction('photos').objectStore('photos').index('date').openKeyCursor(IDBKeyRange.bound(from, to)); r.onsuccess = () => { const c = r.result; if (c) { out[c.key] = (out[c.key] || 0) + 1; c.continue(); } else res(out); }; }); }
+if (navigator.storage && navigator.storage.persist) navigator.storage.persist();
+
+// ===== 予定の取り出し（くりかえし・連日を展開） =====
+function eventsOn(n) {
+  const g = K.fromDn(n); const out = [];
+  for (const e of EV) {
+    if (e.deleted) continue;
+    if (S.show !== 'both' && e.owner !== S.show) continue;
+    const s = dnOf(e.date); const len = e.end ? Math.max(0, dnOf(e.end) - s) : 0;
+    if (n < s) continue;
+    let hit = false;
+    const r = e.repeat || 'none';
+    for (let k = 0; k <= len && !hit; k++) {
+      const base = n - k; if (base < s) break;
+      const b = K.fromDn(base), o = K.fromDn(s);
+      if (r === 'none') hit = base === s;
+      else if (r === 'week') hit = (base - s) % 7 === 0;
+      else if (r === 'month') hit = b.d === o.d;
+      else if (r === 'year') hit = b.d === o.d && b.m === o.m;
+    }
+    if (hit) out.push(e);
+  }
+  return out.sort((a, b) => (a.start || '').localeCompare(b.start || '') || a.title.localeCompare(b.title));
+}
+const evColor = e => e.color || (e.owner === 'm' ? COLORS[1] : COLORS[0]);
+const evLabel = e => (e.stamp || '') + (e.title || '');
+
+// ===== 月の表示 =====
+let cur = (() => { const t = new Date(); return { y: t.getFullYear(), m: t.getMonth() + 1 }; })();
+const todayStr = () => { const t = new Date(); return ymd(t.getFullYear(), t.getMonth() + 1, t.getDate()); };
+
+async function render() {
+  document.documentElement.style.setProperty('--fs', S.fs);
+  const { y, m } = cur;
+  const ki = K.info(y, m, 15);
+  $('#title').innerHTML = `<div class="ym mincho">${y}<small>年</small> ${m}<small>月</small></div><div class="sub">${K.wareki(y, m, 15)}　旧暦 ${ki.kyurekiName}ごろ　${K.yearEto(y)}</div>`;
+  const first = K.dn(y, m, 1); const w0 = K.fromDn(first).w; const start = first - w0;
+  const counts = await photoCounts(strOf(start), strOf(start + 41)).catch(() => ({}));
+  const today = todayStr();
+  let html = '';
+  for (let i = 0; i < 42; i++) {
+    const n = start + i; const g = K.fromDn(n); const info = K.info(g.y, g.m, g.d); const s = strOf(n);
+    const cls = ['cell']; if (g.m !== m) cls.push('out'); if (g.w === 0) cls.push('sun'); if (g.w === 6) cls.push('sat'); if (info.holiday) cls.push('hol'); if (s === today) cls.push('today');
+    const evs = eventsOn(n);
+    const maxEv = 3;
+    const good = info.rekichu.some(r => r === '天赦日' || r === '一粒万倍日');
+    const hn = info.holiday || info.terms[0] || info.events[0] || '';
+    html += `<div class="${cls.join(' ')}" data-d="${s}">
+      <div class="top"><span class="num">${g.d}</span><span class="rk${info.rokuyo === '大安' ? ' taian' : ''}">${info.rokuyo}</span></div>
+      <div class="hn"${info.holiday ? '' : ' style="color:var(--sub)"'}>${esc(hn)}</div>
+      ${evs.slice(0, maxEv).map(e => `<div class="ev" style="background:${evColor(e)}">${esc(evLabel(e))}</div>`).join('')}
+      ${evs.length > maxEv ? `<div class="more">ほか${evs.length - maxEv}件</div>` : ''}
+      <div class="marks">${counts[s] ? `<span class="cam">📷${counts[s]}</span>` : ''}${S.cellRekichu && good ? '<span class="dot"></span>' : ''}</div>
+    </div>`;
+  }
+  $('#grid').innerHTML = html;
+  const who = S.show === 'both' ? ['👥', 'ふたり'] : ['👤', S.names[S.show]];
+  $('#whoIc').textContent = who[0]; $('#whoTx').textContent = who[1];
+}
+function move(dm) { let { y, m } = cur; m += dm; if (m < 1) { m = 12; y--; } if (m > 12) { m = 1; y++; } if (y < 2000 || y > 2060) return; cur = { y, m }; render(); }
+$('#prev').onclick = () => move(-1);
+$('#next').onclick = () => move(1);
+$('#bToday').onclick = () => { const t = new Date(); cur = { y: t.getFullYear(), m: t.getMonth() + 1 }; render(); };
+$('#grid').onclick = e => { const c = e.target.closest('.cell'); if (c) openDay(c.dataset.d); };
+// スワイプで月送り
+(() => { let x0 = null, y0 = 0; const g = $('#grid');
+  g.addEventListener('touchstart', e => { x0 = e.touches[0].clientX; y0 = e.touches[0].clientY; }, { passive: true });
+  g.addEventListener('touchend', e => { if (x0 == null) return; const dx = e.changedTouches[0].clientX - x0, dy = e.changedTouches[0].clientY - y0; if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.5) move(dx < 0 ? 1 : -1); x0 = null; }, { passive: true });
+})();
+$('#bWho').onclick = () => { const order = ['both', 'f', 'm']; S.show = order[(order.indexOf(S.show) + 1) % 3]; saveS(); render(); toast(S.show === 'both' ? 'ふたりの予定を表示' : S.names[S.show] + 'の予定だけ表示'); };
+$('#bAdd').onclick = () => openEdit(null, todayStr());
+$('#bPhoto').onclick = () => pickPhotos(null);
+$('#bSet').onclick = openSettings;
+
+// ===== 日の詳細 =====
+let dayCur = null;
+async function openDay(s) {
+  dayCur = s; const p = parseYmd(s); const info = K.info(p.y, p.m, p.d); const n = info.n;
+  $('#dTitle').textContent = `${p.m}月${p.d}日`;
+  const wc = info.w === 0 || info.holiday ? 'var(--sun)' : info.w === 6 ? 'var(--sat)' : 'var(--ink)';
+  const kr = info.kyureki;
+  let h = `<div class="dhead"><div class="dd mincho" style="color:${wc}">${p.d}</div><div class="dw" style="color:${wc}">${WD[info.w]}曜日</div><div class="dy">${p.y}年${p.m}月・${K.wareki(p.y, p.m, p.d)}</div></div>`;
+  h += `<div class="dsub">旧暦 <b>${kr.leap ? '閏' : ''}${kr.m}月${kr.d}日</b>（${info.kyurekiName}）　干支 <b>${info.kanshi}</b>${info.fullMoon ? '　🌕満月' : info.newMoon ? '　🌑新月' : ''}</div>`;
+  h += `<div class="chips">`;
+  if (info.holiday) h += `<span class="chip hol">${info.holiday}</span>`;
+  h += `<button class="chip rk${info.rokuyo === '大安' ? ' taian' : ''}" data-i="${info.rokuyo}">${info.rokuyo}</button>`;
+  info.terms.forEach(t => h += `<span class="chip">${t}</span>`);
+  info.events.forEach(t => h += `<span class="chip">${t}</span>`);
+  info.rekichu.forEach(r => h += `<button class="chip ${GOOD.includes(r) ? 'good' : BAD.includes(r) ? 'bad' : ''}" data-i="${r}">${r}</button>`);
+  h += `</div><div style="font-size:12px;color:var(--sub);margin-top:6px">※ 六曜や暦注をタップすると意味が出ます</div>`;
+  const evs = eventsOn(n);
+  h += `<div class="sec"><h3>予定</h3>`;
+  h += evs.length ? evs.map(e => `<div class="evrow" data-id="${e.id}"><div class="bar" style="background:${evColor(e)}"></div><div class="tm">${e.start ? e.start + (e.stop ? '<br>〜' + e.stop : '') : '終日'}</div><div style="flex:1;min-width:0"><span class="who" style="background:${e.owner === 'm' ? 'var(--m)' : 'var(--f)'}">${esc(S.names[e.owner])}</span><div class="tt">${esc(evLabel(e))}</div>${e.memo ? `<div class="mm">${esc(e.memo)}</div>` : ''}${e.repeat && e.repeat !== 'none' ? `<div class="mm">🔁 ${{ week: '毎週', month: '毎月', year: '毎年' }[e.repeat]}</div>` : ''}</div></div>`).join('') : `<div class="empty">予定はありません</div>`;
+  h += `</div><div class="sec"><h3>この日の写真</h3><div class="photos" id="dPhotos"></div></div>`;
+  $('#dBody').innerHTML = h; $('#dBody').scrollTop = 0;
+  show('day');
+  const ps = await photosOn(s);
+  const box = $('#dPhotos');
+  if (!ps.length) box.outerHTML = `<div class="empty">写真はありません</div>`;
+  else { ps.forEach((ph, i) => { const im = new Image(); im.src = URL.createObjectURL(ph.thumb); im.onclick = () => openViewer(ps, i); box.appendChild(im); }); }
+}
+$('#dBody').onclick = e => {
+  const c = e.target.closest('[data-i]'); if (c) { const k = c.dataset.i; alertBox(`【${k}】\n${K.ROKUYO_INFO[k] || K.REKICHU_INFO[k] || ''}`); return; }
+  const r = e.target.closest('.evrow'); if (r) { const ev = EV.find(x => x.id === r.dataset.id); if (ev) openEdit(ev); }
+};
+$('#dBack').onclick = () => { hide('day'); render(); };
+$('#dPrev').onclick = () => openDay(strOf(dnOf(dayCur) - 1));
+$('#dNext').onclick = () => openDay(strOf(dnOf(dayCur) + 1));
+$('#dAdd').onclick = () => openEdit(null, dayCur);
+$('#dPhoto').onclick = () => pickPhotos(dayCur);
+
+// ===== 予定の入力 =====
+let editing = null; const F = {};
+function segSet(id, v) { document.querySelectorAll(id + ' button').forEach(b => b.classList.toggle('on', b.dataset.v === String(v))); }
+function segGet(id) { const b = document.querySelector(id + ' button.on'); return b ? b.dataset.v : null; }
+['#fOwner', '#fAllday', '#fRepeat'].forEach(id => $(id).onclick = e => { const b = e.target.closest('button'); if (!b) return; segSet(id, b.dataset.v); if (id === '#fAllday') $('#fTimes').style.display = b.dataset.v === '1' ? 'none' : ''; if (id === '#fOwner' && !F.colorTouched) { F.color = b.dataset.v === 'm' ? COLORS[1] : COLORS[0]; drawColors(); } });
+$('#fStamps').innerHTML = STAMPS.map(s => `<button data-s="${s}">${s || 'なし'}</button>`).join('');
+$('#fStamps').querySelector('button').style.fontSize = '14px';
+$('#fStamps').onclick = e => { const b = e.target.closest('button'); if (!b) return; F.stamp = b.dataset.s; drawStamps(); };
+const drawStamps = () => $('#fStamps').querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.s === F.stamp));
+function drawColors() { $('#fColors').innerHTML = COLORS.map(c => `<button data-c="${c}" style="background:${c}" class="${c === F.color ? 'on' : ''}"></button>`).join(''); }
+$('#fColors').onclick = e => { const b = e.target.closest('button'); if (!b) return; F.color = b.dataset.c; F.colorTouched = true; drawColors(); };
+function openEdit(ev, date) {
+  editing = ev;
+  const me = S.me || 'f';
+  $('#fOwner').querySelectorAll('button').forEach(b => b.textContent = S.names[b.dataset.v]);
+  $('#eTitle').textContent = ev ? '予定を直す' : '予定を入れる';
+  $('#fTitle').value = ev ? ev.title : '';
+  $('#fDate').value = ev ? ev.date : date;
+  $('#fEnd').value = ev && ev.end ? ev.end : '';
+  $('#fStart').value = ev && ev.start || '';
+  $('#fStop').value = ev && ev.stop || '';
+  $('#fMemo').value = ev ? ev.memo || '' : '';
+  segSet('#fOwner', ev ? ev.owner : me);
+  segSet('#fAllday', ev && ev.start ? '0' : '1'); $('#fTimes').style.display = ev && ev.start ? '' : 'none';
+  segSet('#fRepeat', ev ? ev.repeat || 'none' : 'none');
+  F.stamp = ev ? ev.stamp || '' : ''; F.color = ev ? evColor(ev) : (me === 'm' ? COLORS[1] : COLORS[0]); F.colorTouched = !!(ev && ev.color);
+  drawStamps(); drawColors();
+  $('#eDel').classList.toggle('hide', !ev);
+  show('edit');
+}
+function saveEdit() {
+  const title = $('#fTitle').value.trim();
+  if (!title && !F.stamp) { alertBox('「なにをする？」を入れてください'); return; }
+  const allday = segGet('#fAllday') === '1';
+  const d = $('#fDate').value; if (!d) { alertBox('日にちを選んでください'); return; }
+  let end = $('#fEnd').value; if (end && end <= d) end = '';
+  const rec = Object.assign(editing || { id: uid(), created: Date.now() }, {
+    title, date: d, end, owner: segGet('#fOwner'), start: allday ? '' : $('#fStart').value, stop: allday ? '' : $('#fStop').value,
+    repeat: segGet('#fRepeat'), memo: $('#fMemo').value.trim(), stamp: F.stamp, color: F.color, updated: Date.now()
+  });
+  if (!editing) EV.push(rec);
+  saveEV(); hide('edit'); toast('保存しました');
+  if ($('#day').classList.contains('on')) openDay(dayCur); else render();
+}
+$('#eSave').onclick = saveEdit; $('#eSave2').onclick = saveEdit;
+$('#eCancel').onclick = () => hide('edit');
+$('#eDel').onclick = async () => {
+  if (!editing) return;
+  if (!(await confirmBox(`「${evLabel(editing)}」を削除しますか？` + (editing.repeat && editing.repeat !== 'none' ? '\n（くりかえしの予定は全部消えます）' : '')))) return;
+  editing.deleted = true; editing.updated = Date.now(); EV = EV.filter(e => e.id !== editing.id); saveEV(); hide('edit'); toast('削除しました');
+  if ($('#day').classList.contains('on')) openDay(dayCur); else render();
+};
+
+// ===== 写真 =====
+let photoTarget = null;
+function pickPhotos(date) { photoTarget = date; $('#filePhoto').value = ''; $('#filePhoto').click(); }
+$('#filePhoto').onchange = async e => {
+  const files = [...e.target.files]; if (!files.length) return;
+  busy(`写真を入れています… 0 / ${files.length}`);
+  const done = {}; const unknown = [];
+  for (let i = 0; i < files.length; i++) {
+    busy(`写真を入れています… ${i + 1} / ${files.length}`);
+    try {
+      const f = files[i];
+      const taken = photoTarget ? null : await exifDate(f);
+      const conv = await resize(f);
+      const rec = { id: uid(), date: photoTarget || (taken ? taken.slice(0, 10) : null), taken: taken || '', full: conv.full, thumb: conv.thumb, added: Date.now() };
+      if (!rec.date) { unknown.push(rec); continue; }
+      await photoPut(rec); done[rec.date] = (done[rec.date] || 0) + 1;
+    } catch (err) { console.error(err); }
+  }
+  busy(false);
+  if (unknown.length) {
+    const d = await askDate(`撮った日が分からない写真が ${unknown.length} 枚あります。\nどの日に入れますか？`, photoTarget || todayStr());
+    if (d) { for (const r of unknown) { r.date = d; await photoPut(r); } done[d] = (done[d] || 0) + unknown.length; }
+  }
+  const days = Object.keys(done).sort();
+  const total = days.reduce((a, k) => a + done[k], 0);
+  if (total) {
+    if (photoTarget) toast(`${total}枚 入れました`);
+    else alertBox(`${total}枚の写真を、撮った日に入れました。\n\n` + days.slice(0, 12).map(k => { const p = parseYmd(k); return `${p.y}年${p.m}月${p.d}日　${done[k]}枚`; }).join('\n') + (days.length > 12 ? `\nほか ${days.length - 12}日分` : ''));
+  }
+  if ($('#day').classList.contains('on')) openDay(dayCur); else render();
+};
+async function resize(file) {
+  const bmp = await createImageBitmap(file);
+  const mk = (max, q, square) => {
+    let w = bmp.width, h = bmp.height, sx = 0, sy = 0, sw = w, sh = h;
+    if (square) { const m = Math.min(w, h); sx = (w - m) / 2; sy = (h - m) / 2; sw = sh = m; w = h = Math.min(max, m); }
+    else { const r = Math.min(1, max / Math.max(w, h)); w = Math.round(w * r); h = Math.round(h * r); }
+    const c = document.createElement('canvas'); c.width = w; c.height = h; c.getContext('2d').drawImage(bmp, sx, sy, sw, sh, 0, 0, w, h);
+    return new Promise(res => c.toBlob(res, 'image/jpeg', q));
+  };
+  const full = await mk(2048, .86, false); const thumb = await mk(360, .8, true);
+  bmp.close && bmp.close();
+  return { full, thumb };
+}
+// JPEGの撮影日時（EXIF DateTimeOriginal）を読む
+async function exifDate(file) {
+  try {
+    const buf = await file.slice(0, 256 * 1024).arrayBuffer(); const v = new DataView(buf);
+    if (v.getUint16(0) !== 0xFFD8) return null;
+    let o = 2;
+    while (o < v.byteLength - 4) {
+      const mk = v.getUint16(o); const len = v.getUint16(o + 2);
+      if (mk === 0xFFE1 && v.getUint32(o + 4) === 0x45786966) {
+        const t = o + 10; const le = v.getUint16(t) === 0x4949;
+        const u16 = x => v.getUint16(x, le), u32 = x => v.getUint32(x, le);
+        const readStr = (off, n) => { let s = ''; for (let i = 0; i < n - 1; i++) s += String.fromCharCode(v.getUint8(t + off + i)); return s; };
+        const ifd = (off, want) => { const n = u16(t + off); const r = {}; for (let i = 0; i < n; i++) { const e = t + off + 2 + i * 12; const tag = u16(e); if (want.includes(tag)) r[tag] = { cnt: u32(e + 4), val: u32(e + 8) }; } return r; };
+        const i0 = ifd(u32(t + 4), [0x8769, 0x0132]);
+        let s = null;
+        if (i0[0x8769]) { const ex = ifd(i0[0x8769].val, [0x9003, 0x9004]); const x = ex[0x9003] || ex[0x9004]; if (x) s = readStr(x.val, x.cnt); }
+        if (!s && i0[0x0132]) s = readStr(i0[0x0132].val, i0[0x0132].cnt);
+        if (s && /^\d{4}:\d\d:\d\d/.test(s)) return s.slice(0, 10).replace(/:/g, '-') + 'T' + s.slice(11, 19);
+        return null;
+      }
+      if ((mk & 0xFF00) !== 0xFF00) break;
+      o += 2 + len;
+    }
+  } catch (e) { }
+  return null;
+}
+let vList = [], vIdx = 0, vUrl = null;
+function openViewer(list, i) { vList = list; vIdx = i; drawViewer(); show('viewer'); }
+function drawViewer() {
+  if (vUrl) URL.revokeObjectURL(vUrl);
+  const p = vList[vIdx]; vUrl = URL.createObjectURL(p.full);
+  $('#vImg img').src = vUrl;
+  $('#vTitle').textContent = `${vIdx + 1} / ${vList.length}` + (p.taken ? `　${p.taken.slice(11, 16)}` : '');
+  $('#vPrev').style.opacity = vIdx > 0 ? 1 : .3; $('#vNext').style.opacity = vIdx < vList.length - 1 ? 1 : .3;
+}
+$('#vPrev').onclick = () => { if (vIdx > 0) { vIdx--; drawViewer(); } };
+$('#vNext').onclick = () => { if (vIdx < vList.length - 1) { vIdx++; drawViewer(); } };
+$('#vBack').onclick = () => { hide('viewer'); openDay(dayCur); };
+$('#vDel').onclick = async () => {
+  if (!(await confirmBox('この写真を削除しますか？\n（スマホの写真アプリの写真は消えません）'))) return;
+  await photoDel(vList[vIdx].id); vList.splice(vIdx, 1);
+  if (!vList.length) { hide('viewer'); openDay(dayCur); return; }
+  vIdx = Math.min(vIdx, vList.length - 1); drawViewer();
+};
+(() => { let x0 = null; const g = $('#vImg');
+  g.addEventListener('touchstart', e => { x0 = e.touches[0].clientX; }, { passive: true });
+  g.addEventListener('touchend', e => { if (x0 == null) return; const dx = e.changedTouches[0].clientX - x0; if (dx < -50) $('#vNext').onclick(); if (dx > 50) $('#vPrev').onclick(); x0 = null; }, { passive: true });
+})();
+
+// ===== 設定 =====
+function openSettings() {
+  const fsBtns = [[1, '標準'], [1.15, '大きめ'], [1.3, '特大']].map(([v, t]) => `<button data-v="${v}" class="${S.fs == v ? 'on' : ''}">${t}</button>`).join('');
+  $('#sBody').innerHTML = `
+  <div class="card"><h4>このスマホを使う人</h4><div class="seg" id="sMe"><button data-v="f" class="${S.me === 'f' ? 'on' : ''}">${esc(S.names.f)}</button><button data-v="m" class="${S.me === 'm' ? 'on' : ''}">${esc(S.names.m)}</button></div>
+    <p>新しく入れる予定は、ここで選んだ人の予定になります。</p></div>
+  <div class="card"><h4>呼び方</h4><div class="row2"><input class="inp" id="sNf" value="${esc(S.names.f)}"><input class="inp" id="sNm" value="${esc(S.names.m)}"></div></div>
+  <div class="card"><h4>文字の大きさ</h4><div class="seg" id="sFs">${fsBtns}</div></div>
+  <div class="card"><h4>表示</h4><label class="chk"><input type="checkbox" id="sDot" ${S.cellRekichu ? 'checked' : ''}>天赦日・一粒万倍日に金色の印を付ける</label></div>
+  <div class="card"><h4>前のカレンダーの予定を取り込む</h4>
+    <p>CSVファイル（日付・時間・タイトル・メモ）を読み込んで、予定に入れます。</p>
+    <button class="wbtn" id="sCsv">CSVファイルを選ぶ</button></div>
+  <div class="card"><h4>予定のバックアップ</h4>
+    <p>予定をファイルに書き出して保存できます。（写真は含みません）</p>
+    <button class="wbtn" id="sExp">予定を書き出す</button><button class="wbtn" id="sImp">バックアップから戻す</button></div>
+  <div class="card"><h4>いま入っている予定</h4><p>${S.names.f}：${EV.filter(e => e.owner === 'f').length}件　${S.names.m}：${EV.filter(e => e.owner === 'm').length}件</p></div>
+  <div class="ver">こよみ帳 ${VERSION}<br>© 2026 bl-oom Inc.</div>`;
+  show('settings');
+}
+$('#sBody').onclick = e => {
+  const b = e.target.closest('button'); if (!b) return;
+  if (b.closest('#sMe')) { S.me = b.dataset.v; saveS(); openSettings(); }
+  else if (b.closest('#sFs')) { S.fs = Number(b.dataset.v); saveS(); document.documentElement.style.setProperty('--fs', S.fs); openSettings(); }
+  else if (b.id === 'sCsv') { importMode = 'csv'; $('#fileCsv').value = ''; $('#fileCsv').click(); }
+  else if (b.id === 'sImp') { importMode = 'json'; $('#fileCsv').value = ''; $('#fileCsv').click(); }
+  else if (b.id === 'sExp') exportJson();
+};
+$('#sBody').addEventListener('change', e => {
+  if (e.target.id === 'sNf' || e.target.id === 'sNm') { S.names = { f: $('#sNf').value.trim() || 'お父さん', m: $('#sNm').value.trim() || 'お母さん' }; saveS(); }
+  if (e.target.id === 'sDot') { S.cellRekichu = e.target.checked; saveS(); }
+});
+$('#sBack').onclick = () => { hide('settings'); render(); };
+
+function exportJson() {
+  const blob = new Blob([JSON.stringify({ app: 'koyomi', version: VERSION, exported: new Date().toISOString(), events: EV }, null, 1)], { type: 'application/json' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `こよみ帳_予定_${todayStr()}.json`; a.click();
+}
+let importMode = 'csv';
+$('#fileCsv').onchange = async e => {
+  const f = e.target.files[0]; if (!f) return;
+  let text = await f.text();
+  if (importMode === 'json' || f.name.endsWith('.json')) {
+    try { const j = JSON.parse(text); const list = j.events || []; let add = 0; const ids = new Set(EV.map(x => x.id)); list.forEach(x => { if (!ids.has(x.id)) { EV.push(x); add++; } }); saveEV(); alertBox(`${add}件の予定を戻しました`); } catch (err) { alertBox('ファイルを読めませんでした'); }
+    openSettings(); return;
+  }
+  // 文字コード（Shift_JIS）にも対応
+  if (text.includes('\uFFFD')) { try { text = new TextDecoder('shift_jis').decode(await f.arrayBuffer()); } catch (err) { } }
+  const rows = parseCsv(text); if (rows.length < 2) { alertBox('予定が見つかりませんでした'); return; }
+  const recs = csvToEvents(rows);
+  if (!recs.length) { alertBox('日付の列が見つかりませんでした。\n1行目に「日付」「タイトル」などの見出しがあるCSVにしてください。'); return; }
+  const who = await choose(`${recs.length}件の予定が見つかりました。\nだれの予定として入れますか？`, [[S.names.f, 'f'], [S.names.m, 'm'], ['やめる', null]], recs.some(r => r.owner));
+  if (!who) return;
+  const key = e => [e.owner, e.date, e.start, e.title].join('|');
+  const have = new Set(EV.map(key)); let add = 0;
+  recs.forEach(r => { r.owner = r.owner || who; if (!have.has(key(r))) { EV.push(r); have.add(key(r)); add++; } });
+  saveEV(); alertBox(`${add}件の予定を取り込みました。` + (recs.length - add ? `\n（同じ予定 ${recs.length - add}件は飛ばしました）` : '')); openSettings();
+};
+function parseCsv(t) {
+  const rows = []; let row = [], f = '', q = false;
+  t = t.replace(/^\uFEFF/, '');
+  for (let i = 0; i < t.length; i++) {
+    const c = t[i];
+    if (q) { if (c === '"') { if (t[i + 1] === '"') { f += '"'; i++; } else q = false; } else f += c; }
+    else if (c === '"') q = true; else if (c === ',') { row.push(f); f = ''; }
+    else if (c === '\n' || c === '\r') { if (c === '\r' && t[i + 1] === '\n') i++; row.push(f); rows.push(row); row = []; f = ''; }
+    else f += c;
+  }
+  if (f || row.length) { row.push(f); rows.push(row); }
+  return rows.filter(r => r.some(x => x.trim()));
+}
+function normDate(s) { s = (s || '').trim(); const m = s.match(/(\d{4})[\/\-年.](\d{1,2})[\/\-月.](\d{1,2})/); return m ? ymd(+m[1], +m[2], +m[3]) : null; }
+function normTime(s) { s = (s || '').trim(); const m = s.match(/(\d{1,2}):(\d{2})/); if (!m) return ''; let h = +m[1]; if (/PM|午後/i.test(s) && h < 12) h += 12; if (/AM|午前/i.test(s) && h === 12) h = 0; return pad(h) + ':' + m[2]; }
+function csvToEvents(rows) {
+  const hd = rows[0].map(h => h.trim().toLowerCase());
+  const find = (...names) => hd.findIndex(h => names.some(n => h === n || h.includes(n)));
+  const iDate = find('日付', 'start date', '開始日', 'date');
+  const iEnd = find('終了日', 'end date');
+  const iStart = find('開始時刻', 'start time', '開始時間', '時刻');
+  const iStop = find('終了時刻', 'end time', '終了時間');
+  const iTitle = find('タイトル', 'subject', '件名', '予定', 'title');
+  const iMemo = find('メモ', 'description', '詳細', '内容', 'memo');
+  const iWho = find('だれ', '持ち主', 'owner');
+  if (iDate < 0) return [];
+  const out = [];
+  for (const r of rows.slice(1)) {
+    const d = normDate(r[iDate]); if (!d) continue;
+    let end = iEnd >= 0 ? normDate(r[iEnd]) : null; if (end && end <= d) end = '';
+    const w = iWho >= 0 ? (r[iWho] || '').trim() : '';
+    out.push({ id: uid(), created: Date.now(), updated: Date.now(), title: (iTitle >= 0 ? r[iTitle] : '').trim() || '（無題）', date: d, end: end || '', start: iStart >= 0 ? normTime(r[iStart]) : '', stop: iStop >= 0 ? normTime(r[iStop]) : '', memo: iMemo >= 0 ? (r[iMemo] || '').trim() : '', repeat: 'none', stamp: '', color: '', owner: w === 'f' || w === S.names.f ? 'f' : w === 'm' || w === S.names.m ? 'm' : '', imported: true });
+  }
+  return out;
+}
+
+// ===== 共通の部品 =====
+function show(id) { $('#' + id).classList.add('on'); }
+function hide(id) { $('#' + id).classList.remove('on'); }
+let tt; function toast(s) { const t = $('#toast'); t.textContent = s; t.style.display = 'block'; clearTimeout(tt); tt = setTimeout(() => t.style.display = 'none', 1800); }
+function busy(s) { $('#busy').classList.toggle('on', !!s); if (s) $('#busyTx').textContent = s; }
+function dialog(msg, btns, extra) {
+  return new Promise(res => {
+    $('#dlgMsg').textContent = msg; $('#dlgExtra').innerHTML = extra || '';
+    $('#dlgBtns').innerHTML = btns.map((b, i) => `<button class="big ${b[2] || ''}" data-i="${i}">${esc(b[0])}</button>`).join('');
+    $('#dlgBtns').onclick = e => { const b = e.target.closest('button'); if (!b) return; $('#dlg').classList.remove('on'); res(btns[+b.dataset.i][1]); };
+    $('#dlg').classList.add('on');
+  });
+}
+const alertBox = m => dialog(m, [['わかった', true, 'primary']]);
+const confirmBox = m => dialog(m, [['はい', true, 'danger'], ['いいえ', false]]);
+const choose = (m, opts) => dialog(m, opts.map((o, i) => [o[0], o[1], i === 0 ? 'primary' : '']));
+async function askDate(msg, def) {
+  const r = await dialog(msg, [['この日に入れる', 'ok', 'primary'], ['入れない', null]], `<input class="inp" type="date" id="dlgDate" value="${def}" style="margin-top:12px">`);
+  return r ? (document.getElementById('dlgDate') || {}).value || def : null;
+}
+
+// ===== はじめて =====
+async function firstRun() {
+  if (S.me) return;
+  const who = await dialog('こよみ帳へようこそ。\nこのスマホを使うのはどなたですか？', [[S.names.f, 'f', 'primary'], [S.names.m, 'm', 'primary']]);
+  S.me = who; saveS();
+}
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => { });
+render().then(firstRun);
+document.addEventListener('visibilitychange', () => { if (!document.hidden && !$('#day').classList.contains('on')) render(); });
+</script>
+</body>
+</html>

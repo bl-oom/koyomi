@@ -28,6 +28,20 @@ body{position:fixed;inset:0;overflow:hidden}
 button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer}
 .mincho{font-family:"Hiragino Mincho ProN","Yu Mincho","Noto Serif JP",serif}
 
+/* ===== アイコン ===== */
+.av{display:inline-block;border-radius:50%;object-fit:cover;vertical-align:middle;flex:none;background:#ddd}
+.avt{display:inline-flex;align-items:center;justify-content:center;border-radius:50%;color:#fff;font-weight:700;vertical-align:middle;flex:none}
+.ev .av,.ev .avt{width:1.15em;height:1.15em;margin-right:2px;font-size:inherit;border:1px solid rgba(255,255,255,.7)}
+.whorow{display:flex;align-items:center;gap:6px;margin-bottom:3px;font-size:13px;font-weight:700;color:var(--sub)}
+.seg button .av,.seg button .avt{width:28px;height:28px;margin-right:6px}
+.seg button{display:flex;align-items:center;justify-content:center}
+#whoIc{display:flex;gap:2px;height:26px;align-items:center}
+#whoIc .av,#whoIc .avt{width:26px;height:26px;font-size:13px}
+.icgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px;text-align:center}
+.icgrid .av,.icgrid .avt{width:84px;height:84px;font-size:34px;margin:0 auto 6px;display:flex}
+.icgrid .nm{font-weight:700;margin-bottom:6px}
+.icgrid .wbtn{height:44px;margin-top:6px;font-size:15px}
+
 /* ===== 背景 ===== */
 #bg{position:absolute;inset:0;z-index:0;display:none;background:#000}
 #bg img,#bg video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
@@ -68,7 +82,9 @@ body.hasbg #bar{background:rgba(255,253,248,calc(var(--veil) + .1))}
 .cell .cam{font-size:9px;line-height:1;background:#efe6d3;border-radius:4px;padding:1px 2px;color:var(--accent);font-weight:700}
 .ev{font-size:calc(9.5px*var(--fs));line-height:1.25;white-space:nowrap;overflow:hidden;border-radius:3px;padding:0 2px;margin-top:1px;color:#fff}
 .more{font-size:calc(9px*var(--fs));color:var(--sub)}
-#bar{flex:none;height:calc(70px + var(--safe-b));padding-bottom:var(--safe-b);display:grid;grid-template-columns:repeat(5,1fr);background:var(--paper);border-top:1px solid var(--line)}
+#bar{flex:none;height:64px;position:relative;display:grid;grid-template-columns:repeat(5,1fr);background:var(--paper);border-top:1px solid var(--line)}
+.copy{flex:none;text-align:center;font-size:10px;color:var(--sub);background:var(--paper);padding:0 0 calc(2px + var(--safe-b));line-height:14px}
+body.hasbg .copy{background:rgba(255,253,248,calc(var(--veil) + .1))}
 .bbtn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-size:12px;font-weight:700;color:var(--accent)}
 .bbtn .ic{font-size:24px;line-height:1}
 .bbtn:active{background:#f0e9db}
@@ -201,6 +217,7 @@ input[type=date].inp,input[type=time].inp{-webkit-appearance:none;appearance:non
     <button class="bbtn" id="bWho"><span class="ic" id="whoIc">👥</span><span id="whoTx">ふたり</span></button>
     <button class="bbtn" id="bSet"><span class="ic">⚙︎</span>設定</button>
   </div>
+  <div class="copy" id="copy"></div>
 </div>
 
 <!-- 日の詳細 -->
@@ -290,6 +307,7 @@ input[type=date].inp,input[type=time].inp{-webkit-appearance:none;appearance:non
 <div id="toast"></div>
 <div id="busy"><div id="busyTx">読み込み中…</div></div>
 <input type="file" id="filePhoto" accept="image/*" multiple hidden>
+<input type="file" id="fileIcon" accept="image/*" hidden>
 <input type="file" id="fileBg" accept="image/*,video/*" hidden>
 <input type="file" id="fileCsv" accept=".csv,.txt,.json,text/csv,application/json" hidden>
 
@@ -297,7 +315,7 @@ input[type=date].inp,input[type=time].inp{-webkit-appearance:none;appearance:non
 <script src="koyomi.js"></script>
 <script>
 'use strict';
-const VERSION = 'ver 1.03';
+const VERSION = 'ver 1.04';
 const K = window.Koyomi;
 const $ = s => document.querySelector(s);
 const pad = n => String(n).padStart(2, '0');
@@ -392,14 +410,14 @@ async function render() {
     html += `<div class="${cls.join(' ')}" data-d="${s}">
       <div class="top"><span class="num">${g.d}</span><span class="rk${info.rokuyo === '大安' ? ' taian' : ''}">${info.rokuyo}</span></div>
       <div class="hn"${info.holiday ? '' : ' style="color:var(--sub)"'}>${esc(hn)}</div>
-      ${evs.slice(0, maxEv).map(e => `<div class="ev" style="background:${evColor(e)}">${esc(evLabel(e))}</div>`).join('')}
+      ${evs.slice(0, maxEv).map(e => `<div class="ev" style="background:${evColor(e)}">${S.show === 'both' && ICON[e.owner] ? avatar(e.owner) : ''}${esc(evLabel(e))}</div>`).join('')}
       ${evs.length > maxEv ? `<div class="more">ほか${evs.length - maxEv}件</div>` : ''}
       <div class="marks">${counts[s] ? `<span class="cam">📷${counts[s]}</span>` : ''}${S.cellRekichu && good ? '<span class="dot"></span>' : ''}</div>
     </div>`;
   }
   $('#grid').innerHTML = html;
-  const who = S.show === 'both' ? ['👥', 'ふたり'] : ['👤', S.names[S.show]];
-  $('#whoIc').textContent = who[0]; $('#whoTx').textContent = who[1];
+  $('#whoIc').innerHTML = S.show === 'both' ? avatar('f') + avatar('m') : avatar(S.show);
+  $('#whoTx').textContent = S.show === 'both' ? 'ふたり' : S.names[S.show];
 }
 function move(dm) { let { y, m } = cur; m += dm; if (m < 1) { m = 12; y--; } if (m > 12) { m = 1; y++; } if (y < 2000 || y > 2060) return; cur = { y, m }; render(); }
 $('#prev').onclick = () => move(-1);
@@ -411,7 +429,7 @@ $('#grid').onclick = e => { const c = e.target.closest('.cell'); if (c) openDay(
   g.addEventListener('touchstart', e => { x0 = e.touches[0].clientX; y0 = e.touches[0].clientY; }, { passive: true });
   g.addEventListener('touchend', e => { if (x0 == null) return; const dx = e.changedTouches[0].clientX - x0, dy = e.changedTouches[0].clientY - y0; if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.5) move(dx < 0 ? 1 : -1); x0 = null; }, { passive: true });
 })();
-$('#bWho').onclick = () => { const order = ['both', 'f', 'm']; S.show = order[(order.indexOf(S.show) + 1) % 3]; saveS(); render(); toast(S.show === 'both' ? 'ふたりの予定を表示' : S.names[S.show] + 'の予定だけ表示'); };
+$('#bWho').onclick = () => { const me = S.me || 'f'; const order = [me, 'both', me === 'f' ? 'm' : 'f']; S.show = order[(order.indexOf(S.show) + 1) % 3]; saveS(); render(); toast(S.show === 'both' ? 'ふたりの予定を表示' : S.names[S.show] + 'の予定だけ表示'); };
 $('#bAdd').onclick = () => openEdit(null, todayStr());
 $('#bPhoto').onclick = () => pickPhotos(null);
 $('#bSet').onclick = openSettings;
@@ -477,7 +495,7 @@ async function openDay(s) {
   h += `</div><div style="font-size:12px;color:var(--sub);margin-top:6px">※ 六曜や暦注をタップすると意味が出ます</div>`;
   const evs = eventsOn(n);
   h += `<div class="sec"><h3>予定</h3>`;
-  h += evs.length ? evs.map(e => `<div class="evrow" data-id="${e.id}"><div class="bar" style="background:${evColor(e)}"></div><div class="tm">${e.start ? e.start + (e.stop ? '<br>〜' + e.stop : '') : '終日'}</div><div style="flex:1;min-width:0"><span class="who" style="background:${e.owner === 'm' ? 'var(--m)' : 'var(--f)'}">${esc(S.names[e.owner])}</span><div class="tt">${esc(evLabel(e))}</div>${e.memo ? `<div class="mm">${esc(e.memo)}</div>` : ''}${e.repeat && e.repeat !== 'none' ? `<div class="mm">🔁 ${{ week: '毎週', month: '毎月', year: '毎年' }[e.repeat]}</div>` : ''}</div></div>`).join('') : `<div class="empty">予定はありません</div>`;
+  h += evs.length ? evs.map(e => `<div class="evrow" data-id="${e.id}"><div class="bar" style="background:${evColor(e)}"></div><div class="tm">${e.start ? e.start + (e.stop ? '<br>〜' + e.stop : '') : '終日'}</div><div style="flex:1;min-width:0"><div class="whorow">${avatar(e.owner)}${esc(S.names[e.owner])}</div><div class="tt">${esc(evLabel(e))}</div>${e.memo ? `<div class="mm">${esc(e.memo)}</div>` : ''}${e.repeat && e.repeat !== 'none' ? `<div class="mm">🔁 ${{ week: '毎週', month: '毎月', year: '毎年' }[e.repeat]}</div>` : ''}</div></div>`).join('') : `<div class="empty">予定はありません</div>`;
   h += `</div><div class="sec"><h3>この日の写真</h3><div class="photos" id="dPhotos"></div></div>`;
   $('#dBody').innerHTML = h; $('#dBody').scrollTop = 0;
   show('day');
@@ -510,7 +528,7 @@ $('#fColors').onclick = e => { const b = e.target.closest('button'); if (!b) ret
 function openEdit(ev, date) {
   editing = ev;
   const me = S.me || 'f';
-  $('#fOwner').querySelectorAll('button').forEach(b => b.textContent = S.names[b.dataset.v]);
+  $('#fOwner').querySelectorAll('button').forEach(b => b.innerHTML = avatar(b.dataset.v) + esc(S.names[b.dataset.v]));
   $('#eTitle').textContent = ev ? '予定を直す' : '予定を入れる';
   $('#fTitle').value = ev ? ev.title : '';
   $('#fDate').value = ev ? ev.date : date;
@@ -642,6 +660,17 @@ $('#vDel').onclick = async () => {
   g.addEventListener('touchend', e => { if (x0 == null) return; const dx = e.changedTouches[0].clientX - x0; if (dx < -50) $('#vNext').onclick(); if (dx > 50) $('#vPrev').onclick(); x0 = null; }, { passive: true });
 })();
 
+// ===== アイコン =====
+const ICON = { f: null, m: null };
+async function loadIcons() { for (const o of ['f', 'm']) { const r = await miscGet('icon_' + o).catch(() => null); if (ICON[o]) URL.revokeObjectURL(ICON[o]); ICON[o] = r ? URL.createObjectURL(r.blob) : null; } }
+function avatar(o) { return ICON[o] ? `<img class="av" src="${ICON[o]}" alt="">` : `<span class="avt" style="background:${o === 'm' ? 'var(--m)' : 'var(--f)'}">${esc((S.names[o] || '?')[0])}</span>`; }
+let iconTarget = 'f';
+async function setIcon(file) {
+  busy('アイコンを入れています…');
+  try { const t = (await resize(file)).thumb; await miscPut({ id: 'icon_' + iconTarget, blob: t }); await loadIcons(); busy(false); toast('アイコンを変えました'); openSettings(); }
+  catch (e) { busy(false); alertBox('アイコンに入れられませんでした'); }
+}
+
 // ===== 背景 =====
 const VEILS = [[.5, 'うすく'], [.68, 'ふつう'], [.82, 'しっかり']];
 let bgUrl = null, bgType = null;
@@ -660,6 +689,7 @@ async function applyBg() {
   document.body.classList.add('hasbg');
 }
 document.addEventListener('visibilitychange', () => { const v = $('#bg video'); if (v && !document.hidden) v.play().catch(() => { }); });
+$('#fileIcon').onchange = e => { const f = e.target.files[0]; if (f) setIcon(f); };
 $('#fileBg').onchange = async e => {
   const f = e.target.files[0]; if (!f) return;
   const isVideo = f.type.startsWith('video/');
@@ -677,8 +707,11 @@ $('#fileBg').onchange = async e => {
 function openSettings() {
   const fsBtns = [[1, '標準'], [1.15, '大きめ'], [1.3, '特大']].map(([v, t]) => `<button data-v="${v}" class="${S.fs == v ? 'on' : ''}">${t}</button>`).join('');
   $('#sBody').innerHTML = `
-  <div class="card"><h4>このスマホを使う人</h4><div class="seg" id="sMe"><button data-v="f" class="${S.me === 'f' ? 'on' : ''}">${esc(S.names.f)}</button><button data-v="m" class="${S.me === 'm' ? 'on' : ''}">${esc(S.names.m)}</button></div>
-    <p>新しく入れる予定は、ここで選んだ人の予定になります。</p></div>
+  <button class="wbtn" id="sHelp" style="margin:0 0 14px;background:var(--accent);color:#fff">📖 使い方を見る</button>
+  <div class="card"><h4>このスマホを使う人</h4><div class="seg" id="sMe"><button data-v="f" class="${S.me === 'f' ? 'on' : ''}">${avatar('f')}${esc(S.names.f)}</button><button data-v="m" class="${S.me === 'm' ? 'on' : ''}">${avatar('m')}${esc(S.names.m)}</button></div>
+    <p>アプリを開くと、いつもここで選んだ人のカレンダーから始まります。新しく入れる予定も、この人の予定になります。</p></div>
+  <div class="card"><h4>アイコン</h4><div class="icgrid">${['f', 'm'].map(o => `<div>${avatar(o)}<div class="nm">${esc(S.names[o])}</div><button class="wbtn" data-icon="${o}">写真を選ぶ</button><button class="wbtn${ICON[o] ? '' : ' hide'}" data-icondel="${o}">消す</button></div>`).join('')}</div>
+    <p>好きな写真を選ぶと、丸く切り抜いてアイコンにします。</p></div>
   <div class="card"><h4>呼び方</h4><div class="row2"><input class="inp" id="sNf" value="${esc(S.names.f)}"><input class="inp" id="sNm" value="${esc(S.names.m)}"></div></div>
   <div class="card"><h4>文字の大きさ</h4><div class="seg" id="sFs">${fsBtns}</div></div>
   <div class="card"><h4>背景の写真・動画</h4><div id="sBgPrev"></div>
@@ -690,9 +723,10 @@ function openSettings() {
   <div class="card"><h4>前のカレンダーの予定を取り込む</h4>
     <p>CSVファイル（日付・時間・タイトル・メモ）を読み込んで、予定に入れます。</p>
     <button class="wbtn" id="sCsv">CSVファイルを選ぶ</button></div>
-  <div class="card"><h4>予定のバックアップ</h4>
-    <p>予定をファイルに書き出して保存できます。（写真は含みません）</p>
-    <button class="wbtn" id="sExp">予定を書き出す</button><button class="wbtn" id="sImp">バックアップから戻す</button></div>
+  <div class="card"><h4>予定の書き出し・バックアップ</h4>
+    <p>予定をファイルに書き出して保存できます。（写真は含みません）CSVは表計算ソフトや、ほかのカレンダーに取り込むときに使えます。</p>
+    <button class="wbtn" id="sCsvOut">CSVで書き出す（Excelなどで開ける）</button>
+    <button class="wbtn" id="sExp">予定を書き出す（このアプリ用）</button><button class="wbtn" id="sImp">バックアップから戻す</button></div>
   <div class="card"><h4>いま入っている予定</h4><p>${S.names.f}：${EV.filter(e => e.owner === 'f').length}件　${S.names.m}：${EV.filter(e => e.owner === 'm').length}件</p></div>
   <div class="ver">こよみ帳 ${VERSION}<br>© 2026 bl-oom Inc.</div>`;
   show('settings');
@@ -702,7 +736,11 @@ function openSettings() {
 }
 $('#sBody').onclick = e => {
   const b = e.target.closest('button'); if (!b) return;
-  if (b.closest('#sMe')) { S.me = b.dataset.v; saveS(); openSettings(); }
+  if (b.closest('#sMe')) { S.me = b.dataset.v; S.show = S.me; saveS(); openSettings(); }
+  else if (b.dataset.icon) { iconTarget = b.dataset.icon; $('#fileIcon').value = ''; $('#fileIcon').click(); }
+  else if (b.dataset.icondel) { miscDel('icon_' + b.dataset.icondel).then(loadIcons).then(openSettings); }
+  else if (b.id === 'sCsvOut') exportCsv();
+  else if (b.id === 'sHelp') location.href = 'help.html';
   else if (b.closest('#sFs')) { S.fs = Number(b.dataset.v); saveS(); document.documentElement.style.setProperty('--fs', S.fs); openSettings(); }
   else if (b.closest('#sVeil')) { S.veil = Number(b.dataset.v); saveS(); document.documentElement.style.setProperty('--veil', S.veil); document.querySelectorAll('#sVeil button').forEach(x => x.classList.toggle('on', x === b)); }
   else if (b.id === 'sBg') { $('#fileBg').value = ''; $('#fileBg').click(); }
@@ -720,6 +758,22 @@ $('#sBack').onclick = () => { hide('settings'); render(); };
 function exportJson() {
   const blob = new Blob([JSON.stringify({ app: 'koyomi', version: VERSION, exported: new Date().toISOString(), events: EV }, null, 1)], { type: 'application/json' });
   const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `こよみ帳_予定_${todayStr()}.json`; a.click();
+}
+async function exportCsv() {
+  const who = await dialog('どの予定を書き出しますか？', [['ふたり分', 'both', 'primary'], [S.names.f + 'の予定', 'f'], [S.names.m + 'の予定', 'm'], ['やめる', null]]);
+  if (!who) return;
+  const q = v => { v = String(v ?? ''); return /[",\n\r]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; };
+  const RP = { none: '', week: '毎週', month: '毎月', year: '毎年' };
+  const rows = [['日付', '終了日', '開始時刻', '終了時刻', 'タイトル', 'マーク', 'メモ', 'だれ', 'くりかえし']];
+  EV.filter(e => !e.deleted && (who === 'both' || e.owner === who)).sort((a, b) => (a.date + (a.start || '')).localeCompare(b.date + (b.start || '')))
+    .forEach(e => rows.push([e.date.replace(/-/g, '/'), (e.end || '').replace(/-/g, '/'), e.start || '', e.stop || '', e.title, e.stamp || '', e.memo || '', S.names[e.owner] || '', RP[e.repeat || 'none'] || '']));
+  const csv = '\uFEFF' + rows.map(r => r.map(q).join(',')).join('\r\n');
+  const name = `こよみ帳_${who === 'both' ? 'ふたり' : S.names[who]}_${todayStr()}.csv`;
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const file = new File([blob], name, { type: 'text/csv' });
+  if (navigator.canShare && navigator.canShare({ files: [file] })) { try { await navigator.share({ files: [file] }); return; } catch (e) { if (e.name === 'AbortError') return; } }
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; a.click();
+  toast(`${rows.length - 1}件を書き出しました`);
 }
 let importMode = 'csv';
 $('#fileCsv').onchange = async e => {
@@ -772,7 +826,10 @@ function csvToEvents(rows) {
     const d = normDate(r[iDate]); if (!d) continue;
     let end = iEnd >= 0 ? normDate(r[iEnd]) : null; if (end && end <= d) end = '';
     const w = iWho >= 0 ? (r[iWho] || '').trim() : '';
-    out.push({ id: uid(), created: Date.now(), updated: Date.now(), title: (iTitle >= 0 ? r[iTitle] : '').trim() || '（無題）', date: d, end: end || '', start: iStart >= 0 ? normTime(r[iStart]) : '', stop: iStop >= 0 ? normTime(r[iStop]) : '', memo: iMemo >= 0 ? (r[iMemo] || '').trim() : '', repeat: 'none', stamp: '', color: '', owner: w === 'f' || w === S.names.f ? 'f' : w === 'm' || w === S.names.m ? 'm' : '', imported: true });
+    const iRep = find('くりかえし'), iStamp = find('マーク');
+    const rep = iRep >= 0 ? ({ '毎週': 'week', '毎月': 'month', '毎年': 'year' }[(r[iRep] || '').trim()] || 'none') : 'none';
+    const stamp = iStamp >= 0 ? (r[iStamp] || '').trim() : '';
+    out.push({ id: uid(), created: Date.now(), updated: Date.now(), title: (iTitle >= 0 ? r[iTitle] : '').trim() || '（無題）', date: d, end: end || '', start: iStart >= 0 ? normTime(r[iStart]) : '', stop: iStop >= 0 ? normTime(r[iStop]) : '', memo: iMemo >= 0 ? (r[iMemo] || '').trim() : '', repeat: rep, stamp, color: '', owner: w === 'f' || w === S.names.f ? 'f' : w === 'm' || w === S.names.m ? 'm' : '', imported: true });
   }
   return out;
 }
@@ -801,11 +858,13 @@ async function askDate(msg, def) {
 // ===== はじめて =====
 async function firstRun() {
   if (S.me) return;
-  const who = await dialog('こよみ帳へようこそ。\nこのスマホを使うのはどなたですか？', [[S.names.f, 'f', 'primary'], [S.names.m, 'm', 'primary']]);
-  S.me = who; saveS();
+  const who = await dialog('こよみ帳へようこそ。\nこのスマホを使うのはどなたですか？\n（次からは、いつもこの人のカレンダーから開きます）', [[S.names.f, 'f', 'primary'], [S.names.m, 'm', 'primary']]);
+  S.me = who; S.show = who; saveS(); render();
 }
+if (S.me) { S.show = S.me; saveS(); }
+$('#copy').textContent = `こよみ帳 ${VERSION}　© 2026 bl-oom Inc.`;
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => { });
-applyBg().catch(() => { }).finally(() => render().then(firstRun));
+Promise.all([applyBg().catch(() => { }), loadIcons().catch(() => { })]).finally(() => render().then(firstRun));
 document.addEventListener('visibilitychange', () => { if (!document.hidden && !$('#day').classList.contains('on')) render(); });
 </script>
 </body>

@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#f7f3ea">
+<title>こよみ帳 使い方</title>
+<link rel="apple-touch-icon" href="icon-180.png">
+<style>
+:root{--bg:#f7f3ea;--paper:#fffdf8;--ink:#2b2622;--sub:#7a7066;--line:#e3dccf;--accent:#6b4f2a;--gold:#b8892b;--sun:#c4432e}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,"Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP",sans-serif;line-height:1.75;-webkit-text-size-adjust:100%}
+header{position:sticky;top:0;z-index:5;background:var(--paper);border-bottom:1px solid var(--line);padding-top:env(safe-area-inset-top)}
+.hb{height:60px;display:grid;grid-template-columns:110px 1fr 110px;align-items:center}
+.back{height:44px;margin-left:8px;border-radius:10px;font-size:16px;font-weight:700;color:var(--accent);display:flex;align-items:center;justify-content:center;text-decoration:none}
+.back:active{background:#ece4d4}
+header h1{margin:0;text-align:center;font-size:18px}
+main{max-width:640px;margin:0 auto;padding:16px 16px 40px}
+.lead{font-size:16px;color:var(--sub);margin:4px 2px 18px}
+nav{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:10px 14px;margin-bottom:20px}
+nav a{display:block;color:var(--accent);font-weight:700;text-decoration:none;padding:7px 0;font-size:17px;border-bottom:1px dashed var(--line)}
+nav a:last-child{border:0}
+section{background:var(--paper);border:1px solid var(--line);border-radius:16px;padding:16px 18px;margin-bottom:16px;scroll-margin-top:80px}
+h2{font-family:"Hiragino Mincho ProN","Yu Mincho","Noto Serif JP",serif;font-size:22px;margin:0 0 8px;display:flex;align-items:center;gap:8px}
+h2 .n{background:var(--accent);color:#fff;border-radius:50%;width:30px;height:30px;font-size:16px;display:inline-flex;align-items:center;justify-content:center;font-family:inherit;flex:none}
+h3{font-size:17px;margin:16px 0 4px}
+p,li{font-size:17px}
+ol,ul{padding-left:1.4em;margin:6px 0}
+li{margin:4px 0}
+.btn{display:inline-block;background:#efe6d3;color:var(--accent);font-weight:700;border-radius:8px;padding:0 8px;white-space:nowrap}
+.tip{background:#fbf3e1;border-left:4px solid var(--gold);border-radius:8px;padding:10px 12px;margin:10px 0;font-size:16px}
+.warn{background:#f6e2dd;border-left:4px solid var(--sun);border-radius:8px;padding:10px 12px;margin:10px 0;font-size:16px}
+table{border-collapse:collapse;width:100%;font-size:15px;margin:6px 0}
+td{border-bottom:1px solid var(--line);padding:6px 4px;vertical-align:top}
+td:first-child{font-weight:700;white-space:nowrap;width:7.5em}
+.red{color:var(--sun);font-weight:700}
+footer{text-align:center;color:var(--sub);font-size:13px;padding:10px 0 calc(24px + env(safe-area-inset-bottom))}
+</style>
+</head>
+<body>
+<header><div class="hb"><a class="back" href="./">‹ 戻る</a><h1>使い方</h1><div></div></div></header>
+<main>
+<p class="lead">こよみ帳は、六曜や暦（こよみ）が全部入った、美之・博美のためのカレンダーです。予定と、その日に撮った写真を一緒に残せます。</p>
+
+<nav>
+  <a href="#s1">1. はじめに（スマホに入れる）</a>
+  <a href="#s2">2. カレンダーの見方</a>
+  <a href="#s3">3. 月を動かす・昔の年を見る</a>
+  <a href="#s4">4. 予定を入れる・直す・消す</a>
+  <a href="#s5">5. 写真を入れる・見る</a>
+  <a href="#s6">6. ふたりの予定を切り替える</a>
+  <a href="#s7">7. 設定（アイコン・背景・文字の大きさ）</a>
+  <a href="#s8">8. 予定の取り込み・書き出し</a>
+  <a href="#s9">9. 気をつけること</a>
+</nav>
+
+<section id="s1">
+  <h2><span class="n">1</span>はじめに</h2>
+  <h3>スマホのホーム画面に入れる</h3>
+  <ol>
+    <li>iPhoneのSafariで、こよみ帳のページを開きます。</li>
+    <li>画面下の <span class="btn">共有ボタン（□に↑）</span> を押します。</li>
+    <li><span class="btn">ホーム画面に追加</span> を押して、<span class="btn">追加</span> を押します。</li>
+  </ol>
+  <p>ホーム画面の「暦」のアイコンから、アプリのように開けます。</p>
+  <h3>使う人を選ぶ</h3>
+  <p>最初に開いたとき「このスマホを使うのはどなたですか？」と聞かれるので、<b>美之</b> か <b>博美</b> を選びます。次からは、いつも選んだ人のカレンダーから開きます。</p>
+</section>
+
+<section id="s2">
+  <h2><span class="n">2</span>カレンダーの見方</h2>
+  <table>
+    <tr><td>数字</td><td>日にち。<span class="red">赤</span>は日曜・祝日、青は土曜です。</td></tr>
+    <tr><td>右上の小さい字</td><td>六曜（大安・赤口・先勝・友引・先負・仏滅）。<span class="red">大安</span>は赤字です。</td></tr>
+    <tr><td>数字の下の字</td><td>祝日・二十四節気（立冬・冬至など）・行事。</td></tr>
+    <tr><td>色の帯</td><td>予定。マークを付けた予定は、絵も一緒に出ます。</td></tr>
+    <tr><td>📷と数字</td><td>その日の写真の枚数。</td></tr>
+    <tr><td>金色の点</td><td>天赦日か一粒万倍日（縁起の良い日）。</td></tr>
+    <tr><td>金色の枠</td><td>今日。</td></tr>
+  </table>
+  <h3>日にちをタップすると</h3>
+  <p>その日のくわしい暦と、予定・写真が出ます。</p>
+  <ul>
+    <li>旧暦の日にち、干支（えと）、満月・新月</li>
+    <li>六曜と、一粒万倍日・天赦日・寅の日・巳の日・不成就日・三隣亡・土用などの暦注</li>
+    <li>雑節（節分・彼岸・八十八夜・入梅・半夏生・土用の丑の日など）</li>
+  </ul>
+  <div class="tip">六曜や暦注の札をタップすると、その意味が出ます。</div>
+  <p>上の <span class="btn">‹</span> <span class="btn">›</span> で前の日・次の日に移れます。</p>
+</section>
+
+<section id="s3">
+  <h2><span class="n">3</span>月を動かす・昔の年を見る</h2>
+  <ul>
+    <li>上の <span class="btn">‹</span> <span class="btn">›</span> で前の月・次の月へ。カレンダーを左右に指でなでても動きます。</li>
+    <li>下の <span class="btn">◎ 今日</span> で今月に戻ります。</li>
+  </ul>
+  <h3>昔の年にいっぺんに飛ぶ</h3>
+  <ol>
+    <li>上の「2026年 11月 ▼」をタップします。</li>
+    <li>年の一覧が出るので、見たい年（2017年など）をタップします。</li>
+    <li>月の一覧から、見たい月をタップします。</li>
+  </ol>
+  <div class="tip">予定や写真が入っている年・月には「予定12・📷30」のように数が出ます。2000年〜2060年まで見られます。</div>
+</section>
+
+<section id="s4">
+  <h2><span class="n">4</span>予定を入れる・直す・消す</h2>
+  <h3>入れる</h3>
+  <ol>
+    <li>日にちをタップして <span class="btn">＋ 予定を入れる</span>（今日の予定なら、下の <span class="btn">＋ 予定</span> でもOK）。</li>
+    <li>「なにをする？」に書きます（例：病院、ゴルフ）。</li>
+    <li>必要なら、マーク・時間・くりかえし・色・メモを選びます。</li>
+    <li><span class="btn">保存</span> を押します。</li>
+  </ol>
+  <table>
+    <tr><td>マーク</td><td>🏥病院 💊薬 🎂誕生日 ⛳ゴルフ 🙏法事 など。カレンダーにも絵が出ます。</td></tr>
+    <tr><td>おわりの日</td><td>旅行など何日か続く予定のときだけ入れます。</td></tr>
+    <tr><td>時間</td><td>「時間を決める」を押すと、始まりと終わりの時間を入れられます。</td></tr>
+    <tr><td>くりかえし</td><td>毎週・毎月・毎年。誕生日は「毎年」にすると、毎年出ます。</td></tr>
+  </table>
+  <h3>直す・消す</h3>
+  <p>日にちをタップして、予定をタップすると直せます。消すときは下の <span class="btn">削除する</span>。</p>
+  <div class="warn">くりかえしの予定を消すと、全部の回が消えます。</div>
+</section>
+
+<section id="s5">
+  <h2><span class="n">5</span>写真を入れる・見る</h2>
+  <h3>まとめて入れる（おすすめ）</h3>
+  <ol>
+    <li>下の <span class="btn">📷 写真</span> を押します。</li>
+    <li>写真を何枚でも選んで <span class="btn">追加</span>。</li>
+    <li>撮った日を読み取って、<b>それぞれの日に自動で</b>入ります。</li>
+  </ol>
+  <p>撮った日が分からない写真があると、どの日に入れるか聞かれます。</p>
+  <h3>決まった日に入れる</h3>
+  <p>日にちをタップして <span class="btn">📷 写真を入れる</span>。選んだ写真が全部その日に入ります。</p>
+  <h3>見る・消す</h3>
+  <p>日にちをタップして、写真をタップすると大きく見られます。指で左右になでるか <span class="btn">‹ 前</span> <span class="btn">次 ›</span> で次の写真へ。<span class="btn">削除</span> でこよみ帳から消えます。</p>
+  <div class="tip">こよみ帳で写真を消しても、iPhoneの「写真」アプリの写真は消えません。</div>
+</section>
+
+<section id="s6">
+  <h2><span class="n">6</span>ふたりの予定を切り替える</h2>
+  <p>下の真ん中あたりのアイコンのボタンを押すたびに、表示が切り替わります。</p>
+  <p><b>自分の予定 → ふたりの予定 → 相手の予定 →</b>（自分に戻る）</p>
+  <p>アプリを開くと、いつも自分の予定から始まります。</p>
+</section>
+
+<section id="s7">
+  <h2><span class="n">7</span>設定</h2>
+  <p>下の <span class="btn">⚙︎ 設定</span> から変えられます。</p>
+  <table>
+    <tr><td>使う人</td><td>このスマホを使う人。開いたときにこの人のカレンダーが出ます。</td></tr>
+    <tr><td>アイコン</td><td>美之・博美それぞれの写真を選ぶと、丸いアイコンになります。</td></tr>
+    <tr><td>呼び方</td><td>カレンダーに出る名前。</td></tr>
+    <tr><td>文字の大きさ</td><td>標準・大きめ・特大。</td></tr>
+    <tr><td>背景</td><td>好きな写真か動画を1つ選べます。動画はくりかえし流れます（音なし）。「文字を見やすくする白さ」で薄さを変えられます。</td></tr>
+    <tr><td>金色の印</td><td>天赦日・一粒万倍日の印を出すかどうか。</td></tr>
+  </table>
+</section>
+
+<section id="s8">
+  <h2><span class="n">8</span>予定の取り込み・書き出し</h2>
+  <h3>前のカレンダーの予定を取り込む</h3>
+  <p>設定の <span class="btn">CSVファイルを選ぶ</span> から、CSVファイル（日付・時間・タイトル・メモ）を読み込めます。同じ予定は二重に入りません。</p>
+  <h3>書き出す</h3>
+  <ul>
+    <li><span class="btn">CSVで書き出す</span>：Excelなどの表計算や、ほかのカレンダーで使えるファイルになります。ふたり分か、どちらか1人分かを選べます。</li>
+    <li><span class="btn">予定を書き出す（このアプリ用）</span>：こよみ帳のバックアップです。<span class="btn">バックアップから戻す</span> で元に戻せます。</li>
+  </ul>
+</section>
+
+<section id="s9">
+  <h2><span class="n">9</span>気をつけること</h2>
+  <div class="warn">今の版では、予定と写真は<b>そのiPhoneの中</b>に保存されています。機種変更の前や、たまに、<span class="btn">予定を書き出す</span> でバックアップを取っておいてください。</div>
+  <ul>
+    <li>ホーム画面に追加して使うと、データが消えにくくなります。</li>
+    <li>Safariの「履歴とWebサイトデータを消去」をすると、こよみ帳の予定や写真も消えることがあります。</li>
+    <li>ふたりの予定をそれぞれのiPhoneで見せ合う機能は、これから付ける予定です。</li>
+  </ul>
+</section>
+</main>
+<footer id="foot">こよみ帳 ver 1.04<br>© 2026 bl-oom Inc.</footer>
+</body>
+</html>

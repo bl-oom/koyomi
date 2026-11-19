@@ -120,6 +120,27 @@ textarea.inp{min-height:90px;resize:none}
 .row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}.row2>div{min-width:0}
 input[type=date].inp,input[type=time].inp{-webkit-appearance:none;appearance:none;min-height:52px;min-width:0}
 
+/* 年月ジャンプ */
+#title{cursor:pointer;border-radius:12px;padding:2px 0}
+#title:active{background:#ece4d4}
+#title .ym .tri{font-size:.5em;color:var(--sub);margin-left:4px;vertical-align:middle}
+.ygrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.ybtn{background:var(--paper);border:1.5px solid var(--line);border-radius:14px;padding:10px 4px;text-align:center;position:relative}
+.ybtn .y{font-size:calc(22px*var(--fs));font-weight:700}
+.ybtn .w{font-size:calc(11.5px*var(--fs));color:var(--sub);margin-top:2px}
+.ybtn .c{font-size:calc(11px*var(--fs));color:var(--accent);font-weight:700;margin-top:3px;min-height:1.2em}
+.ybtn.on{border-color:var(--gold);background:#fbf3e1}
+.ybtn.now{box-shadow:inset 0 0 0 2px var(--gold)}
+.ybtn:active{filter:brightness(.94)}
+.mgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.mbtn{background:var(--paper);border:1.5px solid var(--line);border-radius:14px;padding:14px 4px;text-align:center}
+.mbtn .m{font-size:calc(24px*var(--fs));font-weight:700}
+.mbtn .w{font-size:calc(11.5px*var(--fs));color:var(--sub)}
+.mbtn .c{font-size:calc(11px*var(--fs));color:var(--accent);font-weight:700;min-height:1.2em;margin-top:2px}
+.mbtn.now{box-shadow:inset 0 0 0 2px var(--gold)}
+.jhint{font-size:calc(14px*var(--fs));color:var(--sub);margin:0 2px 10px}
+.jsec{font-size:calc(15px*var(--fs));font-weight:700;color:var(--sub);margin:18px 2px 8px}
+
 /* 写真ビューア */
 #viewer{background:#111}
 #viewer .shead{background:#111;border-color:#222}
@@ -213,6 +234,20 @@ input[type=date].inp,input[type=time].inp{-webkit-appearance:none;appearance:non
   </div>
 </div>
 
+<!-- 年月ジャンプ -->
+<div class="sheet" id="jump">
+  <div class="shead">
+    <button class="hbtn" id="jBack">‹ 戻る</button>
+    <div class="t" id="jTitle">年をえらぶ</div>
+    <div></div>
+  </div>
+  <div class="sbody" id="jBody"></div>
+  <div class="sfoot">
+    <button class="big" id="jYears">年の一覧へ</button>
+    <button class="big primary" id="jToday">今月にもどる</button>
+  </div>
+</div>
+
 <!-- 写真ビューア -->
 <div class="sheet" id="viewer">
   <div class="shead">
@@ -248,7 +283,7 @@ input[type=date].inp,input[type=time].inp{-webkit-appearance:none;appearance:non
 <script src="koyomi.js"></script>
 <script>
 'use strict';
-const VERSION = 'ver 1.00';
+const VERSION = 'ver 1.01';
 const K = window.Koyomi;
 const $ = s => document.querySelector(s);
 const pad = n => String(n).padStart(2, '0');
@@ -324,7 +359,7 @@ async function render() {
   document.documentElement.style.setProperty('--fs', S.fs);
   const { y, m } = cur;
   const ki = K.info(y, m, 15);
-  $('#title').innerHTML = `<div class="ym mincho">${y}<small>年</small> ${m}<small>月</small></div><div class="sub">${K.wareki(y, m, 15)}　旧暦 ${ki.kyurekiName}ごろ　${K.yearEto(y)}</div>`;
+  $('#title').innerHTML = `<div class="ym mincho">${y}<small>年</small> ${m}<small>月</small><span class="tri">▼</span></div><div class="sub">${K.wareki(y, m, 15)}　旧暦 ${ki.kyurekiName}ごろ　${K.yearEto(y)}</div>`;
   const first = K.dn(y, m, 1); const w0 = K.fromDn(first).w; const start = first - w0;
   const counts = await photoCounts(strOf(start), strOf(start + 41)).catch(() => ({}));
   const today = todayStr();
@@ -362,6 +397,49 @@ $('#bWho').onclick = () => { const order = ['both', 'f', 'm']; S.show = order[(o
 $('#bAdd').onclick = () => openEdit(null, todayStr());
 $('#bPhoto').onclick = () => pickPhotos(null);
 $('#bSet').onclick = openSettings;
+
+// ===== 年月ジャンプ（いっぺんに遡る） =====
+const ETO_ANIMAL = 'ねずみ,うし,とら,うさぎ,たつ,へび,うま,ひつじ,さる,とり,いぬ,いのしし'.split(',');
+function evCounts() { // 年ごと・月ごとの予定の数（くりかえしの予定は除く）
+  const y = {}, ym = {};
+  for (const e of EV) { if (e.deleted || (e.repeat && e.repeat !== 'none')) continue; if (S.show !== 'both' && e.owner !== S.show) continue; const k = e.date.slice(0, 4), k2 = e.date.slice(0, 7); y[k] = (y[k] || 0) + 1; ym[k2] = (ym[k2] || 0) + 1; }
+  return { y, ym };
+}
+async function photoCountsYear() { const c = await photoCounts('2000-01-01', '2060-12-31').catch(() => ({})); const y = {}, ym = {}; for (const k in c) { y[k.slice(0, 4)] = (y[k.slice(0, 4)] || 0) + c[k]; ym[k.slice(0, 7)] = (ym[k.slice(0, 7)] || 0) + c[k]; } return { y, ym }; }
+function countTx(ev, ph) { const a = []; if (ev) a.push(`予定${ev}`); if (ph) a.push(`📷${ph}`); return a.join('・'); }
+async function openYears() {
+  const now = new Date().getFullYear();
+  const ec = evCounts(), pc = await photoCountsYear();
+  const btn = y => `<button class="ybtn${y === cur.y ? ' on' : ''}${y === now ? ' now' : ''}" data-y="${y}"><div class="y">${y}</div><div class="w">${K.wareki(y, 7, 1).replace('年', '')}・${ETO_ANIMAL[((y - 4) % 12 + 12) % 12]}</div><div class="c">${countTx(ec.y[y], pc.y[y])}</div></button>`;
+  let h = `<div class="jhint">見たい年をタップしてください。（上が新しい年です）</div>`;
+  h += `<div class="jsec">これから</div><div class="ygrid">`;
+  for (let y = Math.min(2060, now + 5); y > now; y--) h += btn(y);
+  h += `</div><div class="jsec">今年と、これまで</div><div class="ygrid">`;
+  for (let y = now; y >= 2000; y--) h += btn(y);
+  h += `</div>`;
+  $('#jTitle').textContent = '年をえらぶ';
+  $('#jBody').innerHTML = h;
+  $('#jYears').classList.add('hide');
+  show('jump');
+  const el = $('#jBody').querySelector(`[data-y="${cur.y}"]`); if (el) el.scrollIntoView({ block: 'center' });
+}
+async function openMonths(y) {
+  const t = new Date(); const ec = evCounts(), pc = await photoCountsYear();
+  let h = `<div class="jhint">${y}年（${K.wareki(y, 7, 1)}・${K.yearEto(y)}）　月をタップしてください。</div><div class="mgrid">`;
+  for (let m = 1; m <= 12; m++) { const k = `${y}-${pad(m)}`; h += `<button class="mbtn${y === t.getFullYear() && m === t.getMonth() + 1 ? ' now' : ''}" data-m="${m}"><div class="m">${m}<small style="font-size:.55em">月</small></div><div class="w">${['', '睦月', '如月', '弥生', '卯月', '皐月', '水無月', '文月', '葉月', '長月', '神無月', '霜月', '師走'][m]}</div><div class="c">${countTx(ec.ym[k], pc.ym[k])}</div></button>`; }
+  h += `</div>`;
+  $('#jTitle').textContent = `${y}年`;
+  $('#jBody').innerHTML = h; $('#jBody').dataset.y = y; $('#jBody').scrollTop = 0;
+  $('#jYears').classList.remove('hide');
+}
+$('#title').onclick = openYears;
+$('#jBody').onclick = e => {
+  const yb = e.target.closest('[data-y]'); if (yb && yb.classList.contains('ybtn')) { openMonths(+yb.dataset.y); return; }
+  const mb = e.target.closest('[data-m]'); if (mb) { cur = { y: +$('#jBody').dataset.y, m: +mb.dataset.m }; hide('jump'); render(); }
+};
+$('#jBack').onclick = () => { if (!$('#jYears').classList.contains('hide')) openYears(); else hide('jump'); };
+$('#jYears').onclick = openYears;
+$('#jToday').onclick = () => { const t = new Date(); cur = { y: t.getFullYear(), m: t.getMonth() + 1 }; hide('jump'); render(); };
 
 // ===== 日の詳細 =====
 let dayCur = null;

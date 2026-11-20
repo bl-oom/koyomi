@@ -74,29 +74,34 @@
     const add = (m, d, name) => { if (d) h[dn(y, m, d)] = name; };
     add(1, 1, '元日');
     add(1, y >= 2000 ? nthMonday(y, 1, 2) : 15, '成人の日');
-    add(2, 11, '建国記念の日');
+    if (y >= 1967) add(2, 11, '建国記念の日');
     if (y >= 2020) add(2, 23, '天皇誕生日');
     add(3, equinox(y, 0), '春分の日');
-    add(4, 29, y >= 2007 ? '昭和の日' : 'みどりの日');
+    add(4, 29, y >= 2007 ? '昭和の日' : y >= 1989 ? 'みどりの日' : '天皇誕生日');
     add(5, 3, '憲法記念日');
     if (y >= 2007) add(5, 4, 'みどりの日');
     add(5, 5, 'こどもの日');
-    if (y === 2020) add(7, 23, '海の日'); else if (y === 2021) add(7, 22, '海の日'); else add(7, y >= 2003 ? nthMonday(y, 7, 3) : 20, '海の日');
+    if (y >= 1996) { if (y === 2020) add(7, 23, '海の日'); else if (y === 2021) add(7, 22, '海の日'); else add(7, y >= 2003 ? nthMonday(y, 7, 3) : 20, '海の日'); }
     if (y >= 2016) { if (y === 2020) add(8, 10, '山の日'); else if (y === 2021) add(8, 8, '山の日'); else add(8, 11, '山の日'); }
-    add(9, y >= 2003 ? nthMonday(y, 9, 3) : 15, '敬老の日');
+    if (y >= 1966) add(9, y >= 2003 ? nthMonday(y, 9, 3) : 15, '敬老の日');
     add(9, equinox(y, 180), '秋分の日');
-    if (y === 2020) add(7, 24, 'スポーツの日'); else if (y === 2021) add(7, 23, 'スポーツの日');
-    else add(10, nthMonday(y, 10, 2), y >= 2020 ? 'スポーツの日' : '体育の日');
+    if (y >= 1966) { if (y === 2020) add(7, 24, 'スポーツの日'); else if (y === 2021) add(7, 23, 'スポーツの日');
+      else add(10, y >= 2000 ? nthMonday(y, 10, 2) : 10, y >= 2020 ? 'スポーツの日' : '体育の日'); }
     add(11, 3, '文化の日');
     add(11, 23, '勤労感謝の日');
-    if (y <= 2018) add(12, 23, '天皇誕生日');
+    if (y >= 1989 && y <= 2018) add(12, 23, '天皇誕生日');
+    if (y === 1959) add(4, 10, '皇太子明仁親王の結婚の儀');
+    if (y === 1989) add(2, 24, '昭和天皇の大喪の礼');
+    if (y === 1990) add(11, 12, '即位礼正殿の儀');
+    if (y === 1993) add(6, 9, '皇太子徳仁親王の結婚の儀');
     if (y === 2019) { add(5, 1, '天皇の即位の日'); add(10, 22, '即位礼正殿の儀'); }
-    // 国民の休日（祝日に挟まれた平日）
+    // 国民の休日（1985年12月から：祝日に挟まれた平日）
     const keys = Object.keys(h).map(Number).sort((a, b) => a - b);
-    for (const k of keys) { if (h[k + 2] && !h[k + 1] && fromDn(k + 1).w !== 0) h[k + 1] = '国民の休日'; }
-    // 振替休日
+    const KOKUMIN = dn(1985, 12, 27), FURIKAE = dn(1973, 4, 12);
+    for (const k of keys) { if (k + 1 >= KOKUMIN && h[k + 2] && !h[k + 1] && fromDn(k + 1).w !== 0) h[k + 1] = '国民の休日'; }
+    // 振替休日（1973年4月12日から）
     for (const k of Object.keys(h).map(Number).sort((a, b) => a - b)) {
-      if (fromDn(k).w === 0 && h[k] !== '振替休日') { let j = k + 1; while (h[j]) j++; h[j] = '振替休日'; }
+      if (k >= FURIKAE && fromDn(k).w === 0 && h[k] !== '振替休日') { let j = k + 1; while (h[j]) j++; h[j] = '振替休日'; }
     }
     holCache[y] = h; return h;
   }

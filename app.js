@@ -1,5 +1,6 @@
 'use strict';
-const VERSION = 'ver 2.03';
+const VERSION = 'ver 2.04';
+const MIN_YEAR = 1953;
 const K = window.Koyomi;
 const $ = s => document.querySelector(s);
 const pad = n => String(n).padStart(2, '0');
@@ -38,6 +39,8 @@ const DB = (() => {
   const old = S.names || {};
   seed('p_f', old.f && old.f !== 'お父さん' ? old.f : '美之', 0);
   seed('p_m', old.m && old.m !== 'お母さん' ? old.m : '博美', 1);
+  const bd = (id, b) => { if (d.person[id] && !d.person[id].birthday && !d.person[id].bdSeeded) { d.person[id].birthday = b; d.person[id].bdSeeded = 1; } };
+  bd('p_f', '1953-01-16'); bd('p_m', '1954-05-07');
   seed('p_hana', '花', 2); seed('p_saki', '咲', 3); seed('p_takuma', '拓馬', 4);
   return d;
 })();
@@ -151,7 +154,7 @@ function birthdaysOn(y, m, d) {
   }
   return out;
 }
-const bdayText = b => `${b.name}さん${b.age != null ? b.age + '歳' : ''}🎂`;
+const bdayText = b => b.age === 0 ? `${b.name}さん 誕生の日👶` : `${b.name}さん${b.age != null ? b.age + '歳' : ''}🎂`;
 
 // ===== アイコン =====
 const ICON = { f: null, m: null };
@@ -253,7 +256,7 @@ function render() {
     html += `<div class="${cls.join(' ')}" data-d="${s}">
       <div class="top"><span class="num">${g.d}</span><span class="rk${info.rokuyo === '大安' ? ' taian' : ''}">${info.rokuyo}</span></div>
       <div class="hn"${info.holiday ? '' : ' style="color:var(--sub)"'}>${esc(hn)}</div>
-      ${bds.map(b => `<div class="bd">🎂${esc(b.name)}${b.age != null ? b.age : ''}</div>`).join('')}
+      ${bds.map(b => `<div class="bd">${b.age === 0 ? '👶' : '🎂'}${esc(b.name)}${b.age ? b.age : ''}</div>`).join('')}
       ${evs.slice(0, maxEv).map(e => `<div class="ev" style="background:${evColor(e)}">${S.show === 'both' && ICON[e.owner] ? avatar(e.owner) : ''}<span>${esc(evLabel(e))}</span></div>`).join('')}
       ${evs.length > maxEv ? `<div class="more">ほか${evs.length - maxEv}件</div>` : ''}
       <div class="marks">${counts[s] ? `<span class="cam">📷${counts[s]}</span>` : ''}${S.cellRekichu && good ? '<span class="dot"></span>' : ''}</div>
@@ -263,7 +266,7 @@ function render() {
   $('#whoIc').innerHTML = S.show === 'both' ? avatar('f') + avatar('m') : avatar(S.show);
   $('#whoTx').textContent = S.show === 'both' ? 'ふたり' : NAME(S.show);
 }
-function move(dm) { let { y, m } = cur; m += dm; if (m < 1) { m = 12; y--; } if (m > 12) { m = 1; y++; } if (y < 2000 || y > 2060) return; cur = { y, m }; render(); }
+function move(dm) { let { y, m } = cur; m += dm; if (m < 1) { m = 12; y--; } if (m > 12) { m = 1; y++; } if (y < MIN_YEAR || y > 2060) return; cur = { y, m }; render(); }
 $('#prev').onclick = () => move(-1);
 $('#next').onclick = () => move(1);
 $('#bToday').onclick = () => { const t = new Date(); cur = { y: t.getFullYear(), m: t.getMonth() + 1 }; render(); };
@@ -294,7 +297,7 @@ function openYears() {
   let h = `<div class="jhint">見たい年をタップしてください。（上が新しい年です）</div><div class="jsec">これから</div><div class="ygrid">`;
   for (let y = Math.min(2060, now + 5); y > now; y--) h += btn(y);
   h += `</div><div class="jsec">今年と、これまで</div><div class="ygrid">`;
-  for (let y = now; y >= 2000; y--) h += btn(y);
+  for (let y = now; y >= MIN_YEAR; y--) h += btn(y);
   $('#jTitle').textContent = '年をえらぶ'; $('#jBody').innerHTML = h + '</div>'; $('#jYears').classList.add('hide');
   show('jump');
   const el = $('#jBody').querySelector(`[data-y="${cur.y}"]`); if (el) el.scrollIntoView({ block: 'center' });
@@ -307,7 +310,7 @@ function openMonths(y) {
 }
 async function openYearWheel() {
   const c = counts2(); const t = new Date();
-  const years = []; for (let y = 2000; y <= 2060; y++) years.push({ v: y, t: String(y) });
+  const years = []; for (let y = MIN_YEAR; y <= 2060; y++) years.push({ v: y, t: String(y) });
   const r = await wheelPick({ title: '年と月をえらぶ', noneLabel: '今月にもどる',
     cols: [{ items: years, init: cur.y, unit: '年', uoff: 44 }, { items: Array.from({ length: 12 }, (_, i) => ({ v: i + 1, t: String(i + 1) })), init: cur.m, unit: '月' }],
     info: ([y, m]) => { const k = `${y}-${pad(m)}`; const x = countTx(c.eym[k], c.pym[k]); return `${K.wareki(y, m, 15)}・${ETO_ANIMAL[((y - 4) % 12 + 12) % 12]}年${x ? '　' + x : ''}`; } });

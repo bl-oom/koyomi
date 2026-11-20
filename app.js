@@ -1,5 +1,5 @@
 'use strict';
-const VERSION = 'ver 2.04';
+const VERSION = 'ver 2.05';
 const MIN_YEAR = 1953;
 const K = window.Koyomi;
 const $ = s => document.querySelector(s);
@@ -39,8 +39,6 @@ const DB = (() => {
   const old = S.names || {};
   seed('p_f', old.f && old.f !== 'お父さん' ? old.f : '美之', 0);
   seed('p_m', old.m && old.m !== 'お母さん' ? old.m : '博美', 1);
-  const bd = (id, b) => { if (d.person[id] && !d.person[id].birthday && !d.person[id].bdSeeded) { d.person[id].birthday = b; d.person[id].bdSeeded = 1; } };
-  bd('p_f', '1953-01-16'); bd('p_m', '1954-05-07');
   seed('p_hana', '花', 2); seed('p_saki', '咲', 3); seed('p_takuma', '拓馬', 4);
   return d;
 })();
@@ -256,7 +254,7 @@ function render() {
     html += `<div class="${cls.join(' ')}" data-d="${s}">
       <div class="top"><span class="num">${g.d}</span><span class="rk${info.rokuyo === '大安' ? ' taian' : ''}">${info.rokuyo}</span></div>
       <div class="hn"${info.holiday ? '' : ' style="color:var(--sub)"'}>${esc(hn)}</div>
-      ${bds.map(b => `<div class="bd">${b.age === 0 ? '👶' : '🎂'}${esc(b.name)}${b.age ? b.age : ''}</div>`).join('')}
+      ${bds.map(b => `<div class="bd">${b.age === 0 ? '👶' : '🎂'}${esc(b.name)}${b.age ? b.age + '歳' : ''}</div>`).join('')}
       ${evs.slice(0, maxEv).map(e => `<div class="ev" style="background:${evColor(e)}">${S.show === 'both' && ICON[e.owner] ? avatar(e.owner) : ''}<span>${esc(evLabel(e))}</span></div>`).join('')}
       ${evs.length > maxEv ? `<div class="more">ほか${evs.length - maxEv}件</div>` : ''}
       <div class="marks">${counts[s] ? `<span class="cam">📷${counts[s]}</span>` : ''}${S.cellRekichu && good ? '<span class="dot"></span>' : ''}</div>

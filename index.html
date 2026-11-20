@@ -213,7 +213,7 @@ input[type=date].inp,input[type=time].inp{-webkit-appearance:none;appearance:non
 .span button.on{border-color:var(--accent);color:var(--accent);background:#f3e9d6}
 .tbtn{width:100%;min-height:54px;font-size:20px;font-weight:700;border-radius:12px;border:1.5px solid var(--line);background:var(--paper)}
 .tbtn.ph{color:#b3a999;font-weight:400;font-size:17px}
-.lbl2{display:flex;align-items:baseline;gap:8px}
+.lbl2{display:flex;align-items:baseline;gap:10px}
 .lbl2 small{font-weight:400;color:#a99f92;font-size:12px}
 .plist{display:flex;flex-direction:column;gap:6px}
 .prow{display:flex;align-items:center;gap:10px;padding:12px;background:var(--paper);border:1.5px solid var(--line);border-radius:12px;font-size:18px;text-align:left;width:100%}
@@ -322,12 +322,44 @@ body.hasbg #main{background:transparent}
 .big.outline{background:#fffdf8;border:1.5px solid #4a2c1a;color:#4a2c1a}
 .big .si{width:22px;height:22px}
 .hbtn.primary{background:#4a2c1a}
+
+/* ===== v3.1 Yahoo風につめる ===== */
+#head{height:58px;grid-template-columns:56px 1fr 56px}
+.navbtn{width:40px;height:40px;margin:0 8px;font-size:22px}
+#title .ym{font-size:calc(27px*var(--fs))}
+#title .sub{margin-top:1px;font-size:calc(11px*var(--fs))}
+#week{padding:3px 0;margin-top:2px;font-size:calc(13px*var(--fs))}
+#grid{flex:none;grid-template-rows:none;grid-auto-rows:calc(58px*var(--fs))}
+.cell{padding:2px 1px 0}
+.cell .num{font-size:calc(17px*var(--fs))}
+.cell .rk{font-size:calc(9.5px*var(--fs))}
+.cell .hn{display:none}
+.cell .bd{display:none}
+.cell .ev{font-size:calc(8.5px*var(--fs));padding:0 2px;margin-top:1px;line-height:1.35}
+.cell .more{font-size:calc(8px*var(--fs));line-height:1.1}
+.cell.sel{box-shadow:inset 0 0 0 2.5px #4a2c1a}
+.cell.today.sel{box-shadow:inset 0 0 0 2.5px #4a2c1a,inset 0 0 0 5px #c9962e}
+#dayList{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;margin:0 6px 4px;padding:8px 10px 10px;background:rgba(255,252,244,.94);border:1px solid #e0cfae;border-radius:10px}
+.dlh{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin-bottom:6px}
+.dlh .dd{font-size:calc(20px*var(--fs));font-weight:700;color:#2b2018}
+.dlh .info{font-size:calc(12.5px*var(--fs));color:#6b5a4a}
+.dlh .info b{color:#c4432e}
+.dlh .open{margin-left:auto;font-size:13px;font-weight:700;color:#4a2c1a;background:#efe3cc;border-radius:999px;padding:5px 12px}
+.dli{display:flex;align-items:center;gap:8px;padding:8px 4px;border-top:1px dashed #e3d5bb;width:100%;text-align:left}
+.dli .cb{width:6px;align-self:stretch;border-radius:3px;flex:none}
+.dli .tm{font-size:calc(13px*var(--fs));color:#6b5a4a;min-width:44px;font-weight:700}
+.dli .tt{font-size:calc(16px*var(--fs));font-weight:700;color:#2b2018;flex:1;min-width:0;word-break:break-all}
+.dli .pl{font-size:calc(12px*var(--fs));color:#6b5a4a;font-weight:400}
+.dli .av,.dli .avt{width:24px;height:24px;font-size:12px}
+.dlbd{font-size:calc(14px*var(--fs));color:#a0522d;font-weight:700;padding:4px 4px}
+.dlempty{font-size:calc(14px*var(--fs));color:#8a7a6a;padding:8px 4px}
+.moreBtn{width:100%;padding:12px;border-radius:12px;background:#efe6d3;color:#5a4030;font-weight:700;font-size:15px;margin:4px 0 16px}
+.inp.big1{font-size:22px;font-weight:700}
 </style>
 </head>
 <body>
 <div id="bg"></div>
 <div id="main">
-  <div id="apphead"><span class="mincho">こよみ帳</span><span class="hanko">暦</span></div>
   <div id="head">
     <button class="navbtn" id="prev" aria-label="前の月">‹</button>
     <div id="title"></div>
@@ -335,6 +367,7 @@ body.hasbg #main{background:transparent}
   </div>
   <div id="week"><div>日</div><div>月</div><div>火</div><div>水</div><div>木</div><div>金</div><div>土</div></div>
   <div id="grid"></div>
+  <div id="dayList"></div>
   <div id="bar">
     <button class="bbtn" id="bToday"><span class="ic"><svg class="si" viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/></svg></span>今日</button>
     <button class="bbtn" id="bAdd"><span class="ic"><svg class="si" viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4M12 13v5M9.5 15.5h5"/></svg></span>予定</button>
@@ -368,23 +401,26 @@ body.hasbg #main{background:transparent}
     <button class="hbtn primary" id="eSave">保存</button>
   </div>
   <div class="sbody">
-    <div class="fld"><label class="lbl2">だれが<small>書かなければ本人</small></label><button class="pickf" id="fWho"></button></div>
-    <div class="fld"><label>いつ</label>
+    <div class="fld"><label>タイトル</label><input class="inp big1" id="fTitle" placeholder="例）病院、ゴルフ、法事" enterkeyhint="done"></div>
+    <div class="fld"><label>日付と時間</label>
       <input class="inp" type="date" id="fDate">
-      <div class="span" id="fSpan"><button data-n="1">1日</button><button data-n="2">2日間</button><button data-n="3">3日間</button><button data-n="7">1週間</button><button data-n="0">まで…</button></div>
-      <div id="fEndBox" style="margin-top:8px"><label style="font-size:13px;margin-bottom:4px">まで（おわりの日）</label><input class="inp" type="date" id="fEnd"></div>
-      <div class="row2" style="margin-top:10px">
+      <div class="row2" style="margin-top:8px">
         <div><label style="font-size:13px;margin-bottom:4px">はじまり</label><button class="tbtn" id="fStart"></button></div>
         <div><label style="font-size:13px;margin-bottom:4px">おわり</label><button class="tbtn" id="fStop"></button></div>
       </div>
+      <div class="span" id="fSpan"><button data-n="1">1日</button><button data-n="2">2日間</button><button data-n="3">3日間</button><button data-n="7">1週間</button><button data-n="0">まで…</button></div>
+      <div id="fEndBox" style="margin-top:8px"><label style="font-size:13px;margin-bottom:4px">まで（おわりの日）</label><input class="inp" type="date" id="fEnd"></div>
     </div>
-    <div class="fld"><label class="lbl2">どこで<small>書かなくてもOK</small></label><button class="pickf" id="fPlace"></button></div>
-    <div class="fld"><label>なにをする</label><input class="inp" id="fTitle" placeholder="例）病院、ゴルフ、法事"></div>
-    <div class="fld"><label>マーク</label><div class="stamps" id="fStamps"></div></div>
-    <div class="fld"><label>だれのカレンダーに入れる？</label><div class="seg" id="fOwner"><button data-v="f"></button><button data-v="m"></button></div></div>
-    <div class="fld"><label>くりかえし</label><div class="seg" id="fRepeat"><button data-v="none">なし</button><button data-v="week">毎週</button><button data-v="month">毎月</button><button data-v="year">毎年</button></div></div>
-    <div class="fld"><label>色</label><div class="colors" id="fColors"></div></div>
-    <div class="fld"><label>メモ</label><textarea class="inp" id="fMemo" placeholder="持ち物など"></textarea></div>
+    <div class="fld"><label class="lbl2">場所<small>書かなくてもOK</small></label><button class="pickf" id="fPlace"></button></div>
+    <button class="moreBtn" id="fMoreBtn">＋ その他の設定（だれが・くりかえし・マーク・メモなど）</button>
+    <div id="fMore" style="display:none">
+      <div class="fld"><label class="lbl2">だれが<small>書かなければ本人</small></label><button class="pickf" id="fWho"></button></div>
+      <div class="fld"><label>だれのカレンダーに入れる？</label><div class="seg" id="fOwner"><button data-v="f"></button><button data-v="m"></button></div></div>
+      <div class="fld"><label>くりかえし</label><div class="seg" id="fRepeat"><button data-v="none">なし</button><button data-v="week">毎週</button><button data-v="month">毎月</button><button data-v="year">毎年</button></div></div>
+      <div class="fld"><label>マーク</label><div class="stamps" id="fStamps"></div></div>
+      <div class="fld"><label>色</label><div class="colors" id="fColors"></div></div>
+      <div class="fld"><label>メモ</label><textarea class="inp" id="fMemo" placeholder="持ち物など"></textarea></div>
+    </div>
   </div>
   <div class="sfoot">
     <button class="big danger" id="eDel">削除する</button>

@@ -1,5 +1,6 @@
 'use strict';
-const VERSION = 'ver 3.00';
+const VERSION = 'ver 3.10';
+let selDay = null;
 const MIN_YEAR = 1953;
 const K = window.Koyomi;
 const $ = s => document.querySelector(s);
@@ -244,13 +245,16 @@ function render() {
   document.body.dataset.season = season;
   $('#title').innerHTML = `<div class="ym mincho">${y}<small>年</small>${m}<small>月</small><span class="tri">▾</span></div><div class="sub"><span class="gl"></span>${K.wareki(y, m, 15)}　旧暦 ${ki.kyurekiName}　${ETO_ANIMAL[((y - 4) % 12 + 12) % 12]}年<span class="gl"></span></div>`;
   const first = K.dn(y, m, 1); const start = first - K.fromDn(first).w;
+  const last = K.dn(m === 12 ? y + 1 : y, m === 12 ? 1 : m + 1, 1) - 1;
+  const cellsN = Math.ceil((last - start + 1) / 7) * 7;
   const counts = photoCountMap(); const today = todayStr();
+  if (!selDay || selDay.slice(0, 7) !== `${y}-${pad(m)}`) selDay = today.slice(0, 7) === `${y}-${pad(m)}` ? today : ymd(y, m, 1);
   let html = '';
-  for (let i = 0; i < 42; i++) {
+  for (let i = 0; i < cellsN; i++) {
     const n = start + i; const g = K.fromDn(n); const info = K.info(g.y, g.m, g.d); const s = strOf(n);
-    const cls = ['cell']; if (g.m !== m) cls.push('out'); if (g.w === 0) cls.push('sun'); if (g.w === 6) cls.push('sat'); if (info.holiday) cls.push('hol'); if (s === today) cls.push('today');
+    const cls = ['cell']; if (g.m !== m) cls.push('out'); if (g.w === 0) cls.push('sun'); if (g.w === 6) cls.push('sat'); if (info.holiday) cls.push('hol'); if (s === today) cls.push('today'); if (s === selDay) cls.push('sel');
     const evs = eventsOn(n); const bds = birthdaysOn(g.y, g.m, g.d);
-    const maxEv = bds.length ? 2 : 3;
+    const maxEv = evs.length > 2 ? 1 : 2;
     const good = info.rekichu.some(r => r === '天赦日' || r === '一粒万倍日');
     const hn = info.holiday || info.terms[0] || info.events[0] || '';
     html += `<div class="${cls.join(' ')}" data-d="${s}">
@@ -264,21 +268,35 @@ function render() {
     </div>`;
   }
   $('#grid').innerHTML = html;
+  drawDayList();
   $('#whoIc').innerHTML = S.show === 'both' ? avatar('f') + avatar('m') : avatar(S.show);
   $('#whoTx').textContent = S.show === 'both' ? 'ふたり' : NAME(S.show);
 }
 function move(dm) { let { y, m } = cur; m += dm; if (m < 1) { m = 12; y--; } if (m > 12) { m = 1; y++; } if (y < MIN_YEAR || y > 2060) return; cur = { y, m }; render(); }
 $('#prev').onclick = () => move(-1);
 $('#next').onclick = () => move(1);
-$('#bToday').onclick = () => { const t = new Date(); cur = { y: t.getFullYear(), m: t.getMonth() + 1 }; render(); };
-$('#grid').onclick = e => { const c = e.target.closest('.cell'); if (c) openDay(c.dataset.d); };
+$('#bToday').onclick = () => { const t = new Date(); cur = { y: t.getFullYear(), m: t.getMonth() + 1 }; selDay = todayStr(); render(); };
+$('#grid').onclick = e => { const c = e.target.closest('.cell'); if (!c) return; const d = c.dataset.d;
+  if (d === selDay) { openDay(d); return; }
+  if (d.slice(0, 7) !== `${cur.y}-${pad(cur.m)}`) { const p = parseYmd(d); cur = { y: p.y, m: p.m }; selDay = d; render(); return; }
+  selDay = d; $('#grid').querySelectorAll('.cell.sel').forEach(x => x.classList.remove('sel')); c.classList.add('sel'); drawDayList(); };
+function drawDayList() {
+  const s = selDay; if (!s) return; const p = parseYmd(s); const info = K.info(p.y, p.m, p.d);
+  const evs = eventsOn(info.n); const bds = birthdaysOn(p.y, p.m, p.d);
+  const extra = [info.holiday, ...info.terms, ...info.rekichu.filter(r => r === '天赦日' || r === '一粒万倍日')].filter(Boolean);
+  let h = `<div class="dlh"><span class="dd mincho">${p.m}月${p.d}日（${WD[info.w]}）</span><span class="info">${info.rokuyo === '大安' ? '<b>大安</b>' : info.rokuyo}${extra.length ? '・' + esc(extra.join('・')) : ''}</span><button class="open" id="dlOpen">くわしく ›</button></div>`;
+  bds.forEach(b => h += `<div class="dlbd">${esc(bdayText(b))}</div>`);
+  h += evs.length ? evs.map(e => `<button class="dli" data-id="${e.id}"><span class="cb" style="background:${evColor(e)}"></span>${S.show === 'both' ? avatar(e.owner) : ''}<span class="tm">${e.start || '終日'}</span><span class="tt">${esc(evLabel(e))}${placeName(e.place) ? `<br><span class="pl">📍${esc(placeName(e.place))}</span>` : ''}</span></button>`).join('') : `<div class="dlempty">予定はありません</div>`;
+  $('#dayList').innerHTML = h;
+}
+$('#dayList').onclick = e => { if (e.target.closest('#dlOpen')) { openDay(selDay); return; } const r = e.target.closest('.dli'); if (r) { const ev = DB.ev[r.dataset.id]; if (ev) openEdit(ev); } };
 (() => { let x0 = null, y0 = 0; const g = $('#grid');
   g.addEventListener('touchstart', e => { x0 = e.touches[0].clientX; y0 = e.touches[0].clientY; }, { passive: true });
   g.addEventListener('touchend', e => { if (x0 == null) return; const dx = e.changedTouches[0].clientX - x0, dy = e.changedTouches[0].clientY - y0; if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.5) move(dx < 0 ? 1 : -1); x0 = null; }, { passive: true });
 })();
 const other = o => o === 'f' ? 'm' : 'f';
 $('#bWho').onclick = () => { const me = S.me || 'f'; const order = me === 'admin' ? ['both', 'f', 'm'] : [me, 'both', other(me)]; S.show = order[(order.indexOf(S.show) + 1) % 3]; saveS(); render(); applyBg(); toast(S.show === 'both' ? 'ふたりの予定を表示' : NAME(S.show) + 'の予定だけ表示'); };
-$('#bAdd').onclick = () => openEdit(null, todayStr());
+$('#bAdd').onclick = () => openEdit(null, selDay || todayStr());
 $('#bPhoto').onclick = () => pickPhotos(null);
 $('#bFind').onclick = openFind;
 $('#bSet').onclick = openSettings;
@@ -430,12 +448,16 @@ function openEdit(ev, date) {
   const len = ev && ev.end ? dnOf(ev.end) - dnOf(ev.date) + 1 : 1; F.custom = ![1, 2, 3, 7].includes(len);
   drawWho(); drawPlace(); drawTimes(); drawSpan(); drawStamps(); drawColors();
   $('#eDel').classList.toggle('hide', !ev);
+  const hasMore = !!(ev && ((ev.who || []).length || (ev.repeat && ev.repeat !== 'none') || ev.stamp || ev.memo || ownColor(ev) || ev.owner !== (S.me === 'admin' ? ev.owner : S.me)));
+  $('#fMore').style.display = hasMore ? '' : 'none'; $('#fMoreBtn').style.display = hasMore ? 'none' : '';
   $('#edit .sbody').scrollTop = 0;
   show('edit');
+  if (!ev) setTimeout(() => $('#fTitle').focus(), 80);
 }
+$('#fMoreBtn').onclick = () => { $('#fMore').style.display = ''; $('#fMoreBtn').style.display = 'none'; };
 function saveEdit() {
   const title = $('#fTitle').value.trim();
-  if (!title && !F.stamp) { alertBox('「なにをする」を書いてください'); return; }
+  if (!title && !F.stamp) { alertBox('タイトルを書いてください'); return; }
   const d = $('#fDate').value; if (!d) { alertBox('日にちを選んでください'); return; }
   let end = $('#fEnd').value; if (end && end <= d) end = '';
   const rec = Object.assign(editing ? { ...editing } : { id: uid(), created: Date.now() }, {

@@ -1,5 +1,5 @@
 'use strict';
-const VERSION = 'ver 3.12';
+const VERSION = 'ver 3.13';
 let selDay = null;
 const MIN_YEAR = 1953;
 const K = window.Koyomi;
@@ -254,16 +254,17 @@ function render() {
     const n = start + i; const g = K.fromDn(n); const info = K.info(g.y, g.m, g.d); const s = strOf(n);
     const cls = ['cell']; if (g.m !== m) cls.push('out'); if (g.w === 0) cls.push('sun'); if (g.w === 6) cls.push('sat'); if (info.holiday) cls.push('hol'); if (s === today) cls.push('today'); if (s === selDay) cls.push('sel');
     const evs = eventsOn(n); const bds = birthdaysOn(g.y, g.m, g.d);
-    const maxEv = evs.length > 2 ? 1 : 2;
     const good = info.rekichu.some(r => r === '天赦日' || r === '一粒万倍日');
     const hn = info.holiday || info.terms[0] || info.events[0] || '';
+    const items = bds.map(b => `<div class="bd">${b.age === 0 ? '👶' : '🎂'}${esc(b.name)}${b.age ? b.age + '歳' : ''}</div>`)
+      .concat(evs.map(e => `<div class="ev" style="background:${evColor(e)}">${S.show === 'both' && ICON[e.owner] ? avatar(e.owner) : ''}<span>${esc(evLabel(e))}</span></div>`));
+    const SLOTS = 3;
+    let cellItems = items.length > SLOTS ? items.slice(0, SLOTS - 1).join('') + `<div class="more">ほか${items.length - SLOTS + 1}件</div>` : items.join('');
+    if (hn && items.length < SLOTS) cellItems = `<div class="hn${info.holiday ? ' isHol' : ''}">${esc(hn)}</div>` + cellItems;
     html += `<div class="${cls.join(' ')}" data-d="${s}">
       <div class="num mincho">${g.d === 1 && g.m !== m ? g.m + '/' + g.d : g.d}</div>
       <div class="rk${info.rokuyo === '大安' ? ' taian' : ''}">${info.rokuyo}${S.cellRekichu && good ? '<span class="dot"></span>' : ''}</div>
-      ${hn ? `<div class="hn${info.holiday ? ' isHol' : ''}">${esc(hn)}</div>` : ''}
-      ${bds.map(b => `<div class="bd">${b.age === 0 ? '👶' : '🎂'}${esc(b.name)}${b.age ? b.age + '歳' : ''}</div>`).join('')}
-      ${evs.slice(0, maxEv).map(e => `<div class="ev" style="background:${evColor(e)}">${S.show === 'both' && ICON[e.owner] ? avatar(e.owner) : ''}<span>${esc(evLabel(e))}</span></div>`).join('')}
-      ${evs.length > maxEv ? `<div class="more">ほか${evs.length - maxEv}件</div>` : ''}
+      ${cellItems}
       <div class="marks">${counts[s] ? `<span class="cam">📷${counts[s]}</span>` : ''}</div>
     </div>`;
   }

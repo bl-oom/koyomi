@@ -1,5 +1,5 @@
 'use strict';
-const VERSION = 'ver 3.11';
+const VERSION = 'ver 3.12';
 let selDay = null;
 const MIN_YEAR = 1953;
 const K = window.Koyomi;
@@ -532,16 +532,22 @@ function pickWho(sel, owner) {
 function placeUse() { const c = {}; for (const e of list('ev')) if (e.place) c[e.place] = (c[e.place] || 0) + 1; return c; }
 function pickPlace(sel) {
   let chosen = sel || '', sort = 'use', q = '';
+  // 入力欄は1回だけ作り、下の一覧だけを入れ替える（日本語入力の途中を壊さない）
+  $('#pBody').innerHTML = `<div class="addrow"><input class="inp" id="pNew" placeholder="場所を書く・さがす"><button id="pAdd">登録</button></div>
+    <div class="seg" id="pSort"><button data-v="use" class="on">よく使う順</button><button data-v="name">名前順</button></div>
+    <div id="pList"></div>`;
   const draw = () => {
     const use = placeUse();
     let pl = list('place').filter(p => !q || p.name.includes(q));
     pl.sort(sort === 'use' ? (a, b) => (use[b.id] || 0) - (use[a.id] || 0) || a.name.localeCompare(b.name, 'ja') : (a, b) => a.name.localeCompare(b.name, 'ja'));
-    $('#pBody').innerHTML = `<div class="addrow"><input class="inp" id="pNew" placeholder="場所を書く・さがす" value="${esc(q)}"><button id="pAdd">登録</button></div>
-      <div class="seg" id="pSort"><button data-v="use" class="${sort === 'use' ? 'on' : ''}">よく使う順</button><button data-v="name" class="${sort === 'name' ? 'on' : ''}">名前順</button></div>
-      <div class="hdr2">登録してある場所（${pl.length}）</div>
+    segSet('#pSort', sort);
+    $('#pList').innerHTML = `<div class="hdr2">登録してある場所（${pl.length}）</div>
       <div class="plist">${pl.map(p => `<button class="prow${chosen === p.id ? ' on' : ''}" data-p="${p.id}"><span class="ck">✓</span>📍 ${esc(p.name)}<span class="cnt">${use[p.id] ? use[p.id] + '回' : ''}</span></button>`).join('') || '<div class="empty">まだありません。上に書いて「登録」を押してください。</div>'}</div>`;
-    const inp = $('#pNew'); inp.oninput = () => { q = inp.value.trim(); const pos = inp.selectionStart; draw(); const i2 = $('#pNew'); i2.focus(); i2.setSelectionRange(pos, pos); };
   };
+  const inp = $('#pNew'); let composing = false;
+  inp.addEventListener('compositionstart', () => composing = true);
+  inp.addEventListener('compositionend', () => { composing = false; q = inp.value.trim(); draw(); });
+  inp.addEventListener('input', e => { if (composing || e.isComposing) return; q = inp.value.trim(); draw(); });
   draw();
   $('#pBody').onclick = e => {
     const r = e.target.closest('[data-p]'); if (r) { chosen = chosen === r.dataset.p ? '' : r.dataset.p; pickDone(chosen); return; }

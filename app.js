@@ -1,5 +1,5 @@
 'use strict';
-const VERSION = 'ver 3.19';
+const VERSION = 'ver 3.20';
 let selDay = null;
 const MIN_YEAR = 1953;
 const K = window.Koyomi;
@@ -249,7 +249,7 @@ function render() {
   const cellsN = Math.ceil((last - start + 1) / 7) * 7;
   const counts = photoCountMap(); const today = todayStr();
   const rowH = fitGrid(cellsN / 7);
-  const SLOTS = rowH >= 86 ? 3 : rowH >= 66 ? 2 : 1;
+  const SLOTS = rowH >= 86 ? 3 : rowH >= 62 ? 2 : 1;
   if (!selDay || selDay.slice(0, 7) !== `${y}-${pad(m)}`) selDay = today.slice(0, 7) === `${y}-${pad(m)}` ? today : ymd(y, m, 1);
   let html = '';
   for (let i = 0; i < cellsN; i++) {

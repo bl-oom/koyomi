@@ -1,5 +1,5 @@
 'use strict';
-const VERSION = 'ver 3.18';
+const VERSION = 'ver 3.19';
 let selDay = null;
 const MIN_YEAR = 1953;
 const K = window.Koyomi;
@@ -859,7 +859,7 @@ function openSettings() {
   <button class="wbtn" id="sHelp" style="margin:0 0 14px;background:var(--accent);color:#fff">📖 使い方を見る</button>
   <div class="card"><h4>このスマホを使う人</h4><div class="seg" id="sMe"><button data-v="f" class="${S.me === 'f' ? 'on' : ''}">${avatar('f')}${esc(NAME('f'))}</button><button data-v="m" class="${S.me === 'm' ? 'on' : ''}">${avatar('m')}${esc(NAME('m'))}</button><button data-v="admin" class="${isAdmin() ? 'on' : ''}">🔑管理者</button></div>
     <p>アプリを開くと、いつもここで選んだ人のカレンダーから始まります。「管理者」は${esc(NAME('f'))}と${esc(NAME('m'))}の両方のカレンダーを見たり直したりできます（パスワードが必要）。</p>${isAdmin() ? '<button class="wbtn" id="sPin">管理者のパスワードを変える</button>' : ''}</div>
-  <div class="card"><h4>ふたりの同期</h4>
+  <div class="card${S.sync && !isAdmin() ? ' hideSync' : ''}"><h4>ふたりの同期</h4>
     <p class="sync" id="sSyncState">${S.sync ? esc(syncState || '準備中') : 'まだつながっていません'}</p>
     <p>${S.sync ? '予定・人・場所・写真・アイコンが、美之と博美のスマホで同じになります。' : '「つなぐリンク」を開くと、2台のスマホで予定が同じになります。'}</p>
     <button class="wbtn${S.sync ? '' : ' hide'}" id="sSyncNow">今すぐ同期する</button>

@@ -1,5 +1,5 @@
-const C='koyomi-v1.04';
-const FILES=['./','index.html','koyomi.js','koyomi-data.js','manifest.webmanifest','icon-180.png','icon-192.png','icon-512.png','help.html'];
+const C='koyomi-v2.00';
+const FILES=['./','index.html','koyomi.js','koyomi-data.js','app.js','manifest.webmanifest','icon-180.png','icon-192.png','icon-512.png','help.html'];
 self.addEventListener('install',e=>{e.waitUntil(caches.open(C).then(c=>c.addAll(FILES)));self.skipWaiting();});
 self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==C).map(k=>caches.delete(k)))));self.clients.claim();});
 self.addEventListener('fetch',e=>{if(e.request.method!=='GET')return;e.respondWith(fetch(e.request).then(r=>{const cp=r.clone();caches.open(C).then(c=>c.put(e.request,cp));return r;}).catch(()=>caches.match(e.request)));});

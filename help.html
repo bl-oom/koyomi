@@ -46,12 +46,14 @@ footer{text-align:center;color:var(--sub);font-size:13px;padding:10px 0 calc(24p
   <a href="#s1">1. はじめに（スマホに入れる）</a>
   <a href="#s2">2. カレンダーの見方</a>
   <a href="#s3">3. 月を動かす・昔の年を見る</a>
-  <a href="#s4">4. 予定を入れる・直す・消す</a>
+  <a href="#s4">4. 予定を入れる（だれが・いつ・どこで・なにを）</a>
   <a href="#s5">5. 写真を入れる・見る</a>
-  <a href="#s6">6. ふたりの予定を切り替える</a>
-  <a href="#s7">7. 設定（アイコン・背景・文字の大きさ）</a>
-  <a href="#s8">8. 予定の取り込み・書き出し</a>
-  <a href="#s9">9. 気をつけること</a>
+  <a href="#s6">6. ふたりの予定・同期</a>
+  <a href="#s10">7. 予定をさがす</a>
+  <a href="#s11">8. 人の登録・誕生日</a>
+  <a href="#s7">9. 設定（アイコン・背景・文字の大きさ）</a>
+  <a href="#s8">10. 予定の取り込み・書き出し</a>
+  <a href="#s9">11. 気をつけること</a>
 </nav>
 
 <section id="s1">
@@ -105,22 +107,19 @@ footer{text-align:center;color:var(--sub);font-size:13px;padding:10px 0 calc(24p
 </section>
 
 <section id="s4">
-  <h2><span class="n">4</span>予定を入れる・直す・消す</h2>
-  <h3>入れる</h3>
-  <ol>
-    <li>日にちをタップして <span class="btn">＋ 予定を入れる</span>（今日の予定なら、下の <span class="btn">＋ 予定</span> でもOK）。</li>
-    <li>「なにをする？」に書きます（例：病院、ゴルフ）。</li>
-    <li>必要なら、マーク・時間・くりかえし・色・メモを選びます。</li>
-    <li><span class="btn">保存</span> を押します。</li>
-  </ol>
+  <h2><span class="n">4</span>予定を入れる</h2>
+  <p>日にちをタップして <span class="btn">＋ 予定を入れる</span>（今日の予定なら、下の <span class="btn">＋ 予定</span> でもOK）。上から順に入れていきます。</p>
   <table>
+    <tr><td>だれが</td><td>何も選ばなければ「本人」の予定になります。タップすると、博美（博美のスマホでは美之）・花・咲・拓馬などから選べます（何人でも）。いない人は「新しい人を登録」で増やせます。</td></tr>
+    <tr><td>いつ</td><td>日にちを選びます。何日も続くときは <span class="btn">2日間</span> <span class="btn">3日間</span> <span class="btn">1週間</span>、それ以外は <span class="btn">まで…</span> でおわりの日を選びます。</td></tr>
+    <tr><td>時間</td><td>「はじまり」「おわり」をタップすると、指で上下に回して時間を選べます。選ばなければ時間なし（一日の予定）です。</td></tr>
+    <tr><td>どこで</td><td>書かなくてもOK。タップして場所を書いて <span class="btn">登録</span> すると、次からは一覧から選ぶだけ。「よく使う順」「名前順」に並べ替えられます。</td></tr>
+    <tr><td>なにをする</td><td>自由に書きます（例：病院、ゴルフ）。</td></tr>
     <tr><td>マーク</td><td>🏥病院 💊薬 🎂誕生日 ⛳ゴルフ 🙏法事 など。カレンダーにも絵が出ます。</td></tr>
-    <tr><td>おわりの日</td><td>旅行など何日か続く予定のときだけ入れます。</td></tr>
-    <tr><td>時間</td><td>「時間を決める」を押すと、始まりと終わりの時間を入れられます。</td></tr>
-    <tr><td>くりかえし</td><td>毎週・毎月・毎年。誕生日は「毎年」にすると、毎年出ます。</td></tr>
+    <tr><td>だれのカレンダー</td><td>ふつうは自分。相手のカレンダーに入れることもできます。</td></tr>
+    <tr><td>くりかえし</td><td>毎週・毎月・毎年。</td></tr>
   </table>
-  <h3>直す・消す</h3>
-  <p>日にちをタップして、予定をタップすると直せます。消すときは下の <span class="btn">削除する</span>。</p>
+  <p>最後に <span class="btn">保存</span>。直すときは、日にちをタップして予定をタップします。消すときは <span class="btn">削除する</span>。</p>
   <div class="warn">くりかえしの予定を消すと、全部の回が消えます。</div>
 </section>
 
@@ -133,22 +132,38 @@ footer{text-align:center;color:var(--sub);font-size:13px;padding:10px 0 calc(24p
     <li>撮った日を読み取って、<b>それぞれの日に自動で</b>入ります。</li>
   </ol>
   <p>撮った日が分からない写真があると、どの日に入れるか聞かれます。</p>
-  <h3>決まった日に入れる</h3>
-  <p>日にちをタップして <span class="btn">📷 写真を入れる</span>。選んだ写真が全部その日に入ります。</p>
+  <h3>その日の写真を見る</h3>
+  <p>日にちをタップして <span class="btn">📷 写真を見る</span>。「iPhoneの写真から選んで入れる」（選んだ写真が全部その日に入ります）か、「Googleフォトでこの日を見る」を選べます。</p>
   <h3>見る・消す</h3>
   <p>日にちをタップして、写真をタップすると大きく見られます。指で左右になでるか <span class="btn">‹ 前</span> <span class="btn">次 ›</span> で次の写真へ。<span class="btn">削除</span> でこよみ帳から消えます。</p>
   <div class="tip">こよみ帳で写真を消しても、iPhoneの「写真」アプリの写真は消えません。</div>
 </section>
 
 <section id="s6">
-  <h2><span class="n">6</span>ふたりの予定を切り替える</h2>
-  <p>下の真ん中あたりのアイコンのボタンを押すたびに、表示が切り替わります。</p>
-  <p><b>自分の予定 → ふたりの予定 → 相手の予定 →</b>（自分に戻る）</p>
+  <h2><span class="n">6</span>ふたりの予定・同期</h2>
+  <p>下のアイコンのボタンを押すたびに、表示が切り替わります。</p>
+  <p><b>自分の予定だけ → ふたりの予定 → 相手の予定だけ →</b>（自分に戻る）</p>
   <p>アプリを開くと、いつも自分の予定から始まります。</p>
+  <h3>同期（2台のスマホで同じにする）</h3>
+  <p>拓馬から届く「つなぐリンク」を、それぞれのiPhoneで1回だけ開きます。そのあとは、予定・人・場所・写真・アイコンが自動で2台に行き渡ります。</p>
+  <ul><li>いちばん下に「同期済み 9:15」のように出ていれば、つながっています。</li><li>電波がないときに入れた予定も、つながったときに送られます。</li></ul>
+</section>
+<section id="s10">
+  <h2><span class="n">7</span>予定をさがす</h2>
+  <p>下の <span class="btn">🔍 さがす</span> から。</p>
+  <ul><li>ことばでさがす（例：病院）</li><li>人でしぼる（例：花 → 花の予定だけ）</li><li>場所でしぼる</li><li>新しい順・古い順に並べ替え</li></ul>
+  <p>出てきた予定をタップすると、その日が開きます。</p>
+</section>
+<section id="s11">
+  <h2><span class="n">8</span>人の登録・誕生日</h2>
+  <p>設定の <span class="btn">人の登録・誕生日を開く</span> から。名前の変更や、誕生日を入れられます。誕生日を入れると、カレンダーに「花さん13歳🎂」のように出ます（年が分からなければ年齢なし）。</p>
+  <h3>iPhoneの連絡先から読む</h3>
+  <ol><li>「連絡先」アプリで人を開き、<span class="btn">連絡先を共有</span> → <span class="btn">ファイルに保存</span>。</li><li>こよみ帳の <span class="btn">連絡先から読む</span> で、そのファイルを選びます。</li></ol>
+  <p>誕生日が入っている人だけ読み込まれます。同じ名前の人がいれば、その人に誕生日が入ります。</p>
 </section>
 
 <section id="s7">
-  <h2><span class="n">7</span>設定</h2>
+  <h2><span class="n">9</span>設定</h2>
   <p>下の <span class="btn">⚙︎ 設定</span> から変えられます。</p>
   <table>
     <tr><td>使う人</td><td>このスマホを使う人。開いたときにこの人のカレンダーが出ます。</td></tr>
@@ -161,7 +176,7 @@ footer{text-align:center;color:var(--sub);font-size:13px;padding:10px 0 calc(24p
 </section>
 
 <section id="s8">
-  <h2><span class="n">8</span>予定の取り込み・書き出し</h2>
+  <h2><span class="n">10</span>予定の取り込み・書き出し</h2>
   <h3>前のカレンダーの予定を取り込む</h3>
   <p>設定の <span class="btn">CSVファイルを選ぶ</span> から、CSVファイル（日付・時間・タイトル・メモ）を読み込めます。同じ予定は二重に入りません。</p>
   <h3>書き出す</h3>
@@ -172,15 +187,14 @@ footer{text-align:center;color:var(--sub);font-size:13px;padding:10px 0 calc(24p
 </section>
 
 <section id="s9">
-  <h2><span class="n">9</span>気をつけること</h2>
-  <div class="warn">今の版では、予定と写真は<b>そのiPhoneの中</b>に保存されています。機種変更の前や、たまに、<span class="btn">予定を書き出す</span> でバックアップを取っておいてください。</div>
+  <h2><span class="n">11</span>気をつけること</h2>
   <ul>
-    <li>ホーム画面に追加して使うと、データが消えにくくなります。</li>
-    <li>Safariの「履歴とWebサイトデータを消去」をすると、こよみ帳の予定や写真も消えることがあります。</li>
-    <li>ふたりの予定をそれぞれのiPhoneで見せ合う機能は、これから付ける予定です。</li>
+    <li>同期がつながっていれば、予定や写真はネット上（拓馬のGoogle）にも保存されるので、スマホを替えても「つなぐリンク」を開けば戻ります。</li>
+    <li>背景の写真・動画と文字の大きさは、それぞれのスマホだけの設定です。</li>
+    <li>ホーム画面に追加して使ってください。</li>
   </ul>
 </section>
 </main>
-<footer id="foot">こよみ帳 ver 1.04<br>© 2026 bl-oom Inc.</footer>
+<footer id="foot">こよみ帳 ver 2.00<br>© 2026 bl-oom Inc.</footer>
 </body>
 </html>

@@ -1,5 +1,5 @@
 'use strict';
-const VERSION = 'ver 3.26';
+const VERSION = 'ver 3.27';
 let selDay = null;
 const MIN_YEAR = 1953;
 const K = window.Koyomi;
@@ -310,6 +310,7 @@ function drawDayList() {
   bds.forEach(b => h += `<div class="dlbd">${esc(bdayText(b))}</div>`);
   h += evs.length ? evs.map(e => `<button class="dli" data-id="${e.id}"><span class="cb" style="background:${evColor(e)}"></span>${S.show === 'both' || e.owner === 't' ? avatar(e.owner) : ''}<span class="tm">${e.start || '終日'}</span><span class="tt">${esc(evLabel(e))}${placeName(e.place) ? `<br><span class="pl">📍${esc(placeName(e.place))}</span>` : ''}</span></button>`).join('') : `<div class="dlempty">予定はありません</div>`;
   $('#dayList').innerHTML = h;
+  document.body.style.setProperty('--my', isAdmin() ? T_ICON : ownerColor(S.me || 'f'));
 }
 $('#dayList').onclick = e => { if (e.target.closest('#dlAdd')) { openEdit(null, selDay || todayStr()); return; } if (e.target.closest('#dlOpen')) { openDay(selDay); return; } const r = e.target.closest('.dli'); if (r) { const ev = DB.ev[r.dataset.id]; if (ev) openEdit(ev); } };
 (() => { let x0 = null, y0 = 0; const g = $('#grid');

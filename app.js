@@ -1,5 +1,5 @@
 'use strict';
-const VERSION = 'ver 3.25';
+const VERSION = 'ver 3.26';
 let selDay = null;
 const MIN_YEAR = 1953;
 const K = window.Koyomi;
@@ -48,7 +48,8 @@ function persist() { LS.set('db', DB); LS.set('dirty', [...DIRTY]); }
 function put(kind, rec, quiet) { rec.updated = Date.now(); DB[kind][rec.id] = rec; DIRTY.add(kind + ':' + rec.id); persist(); if (!quiet) scheduleSync(); }
 function del(kind, id) { const r = DB[kind][id]; if (!r) return; r.deleted = true; put(kind, r); }
 const list = kind => Object.values(DB[kind]).filter(r => !r.deleted);
-const NAME = o => (DB.person['p_' + o] || {}).name || (o === 'f' ? '美之' : '博美');
+const NAME = o => o === 't' ? '拓馬' : (DB.person['p_' + o] || {}).name || (o === 'f' ? '美之' : '博美');
+const T_COLOR = '#8e8e8e', T_ICON = '#4a4a4a';
 const isAdmin = () => S.me === 'admin';
 async function sha(t) { const b = await crypto.subtle.digest('SHA-256', new TextEncoder().encode('koyomi-admin:' + t)); return [...new Uint8Array(b)].map(x => x.toString(16).padStart(2, '0')).join(''); }
 async function becomeAdmin() {
@@ -114,7 +115,7 @@ async function migrate() {
 function eventsOn(n, show) {
   show = show || S.show; const out = [];
   for (const e of list('ev')) {
-    if (show !== 'both' && e.owner !== show) continue;
+    if (e.owner === 't' ? show !== 't' : (show !== 'both' && e.owner !== show)) continue;
     const s = dnOf(e.date); const len = e.end ? Math.max(0, dnOf(e.end) - s) : 0;
     if (n < s) continue;
     const r = e.repeat || 'none'; let hit = false;
@@ -131,7 +132,7 @@ function eventsOn(n, show) {
   return out.sort((a, b) => (a.start || '').localeCompare(b.start || '') || (a.title || '').localeCompare(b.title || ''));
 }
 const PCOLORS = ['#2f6fa8', '#c0466a', '#3f8f5a', '#c9822b', '#7a52a8', '#5f6b75', '#c4432e', '#2a8f93', '#8a5a2b', '#d4639a', '#1f8a70', '#3b3b98'];
-const ownerColor = o => (S.pcolor && S.pcolor[o]) || (o === 'm' ? COLORS[1] : COLORS[0]);
+const ownerColor = o => o === 't' ? T_COLOR : (S.pcolor && S.pcolor[o]) || (o === 'm' ? COLORS[1] : COLORS[0]);
 const ownColor = e => e.color && !(e.color === COLORS[0] && e.owner !== 'm') && !(e.color === COLORS[1] && e.owner === 'm') ? e.color : '';
 const evColor = e => ownColor(e) || ownerColor(e.owner);
 const whoNames = e => (e.who || []).map(personName).filter(Boolean);
@@ -172,7 +173,7 @@ async function loadIcons() {
     ICON[o] = blob ? URL.createObjectURL(blob) : null;
   }
 }
-function avatar(o) { return ICON[o] ? `<img class="av" src="${ICON[o]}" alt="">` : `<span class="avt" style="background:${o === 'm' ? 'var(--m)' : 'var(--f)'}">${esc((NAME(o) || '?')[0])}</span>`; }
+function avatar(o) { return ICON[o] ? `<img class="av" src="${ICON[o]}" alt="">` : `<span class="avt" style="background:${o === 't' ? T_ICON : o === 'm' ? 'var(--m)' : 'var(--f)'}">${esc((NAME(o) || '?')[0])}</span>`; }
 let iconTarget = 'f';
 $('#fileIcon').onchange = async e => {
   const f = e.target.files[0]; if (!f) return;
@@ -303,11 +304,11 @@ function fitGrid(weeks) {
 let rzT; window.addEventListener('resize', () => { clearTimeout(rzT); rzT = setTimeout(render, 150); });
 function drawDayList() {
   const s = selDay; if (!s) return; const p = parseYmd(s); const info = K.info(p.y, p.m, p.d);
-  const evs = eventsOn(info.n); const bds = birthdaysOn(p.y, p.m, p.d);
+  const evs = eventsOn(info.n).concat(eventsOn(info.n, 't')); const bds = birthdaysOn(p.y, p.m, p.d);
   const extra = [info.holiday, ...info.terms, ...info.rekichu.filter(r => r === '天赦日' || r === '一粒万倍日')].filter(Boolean);
   let h = `<div class="dlh"><span class="dlL"><span class="dd mincho">${p.m}月${p.d}日（${WD[info.w]}）</span><span class="info">${info.rokuyo === '大安' ? '<b>大安</b>' : info.rokuyo}${extra.length ? '・' + esc(extra.join('・')) : ''}</span></span><span class="dlBtns"><button class="dlAdd" id="dlAdd">＋ 予定を入れる</button><button class="open" id="dlOpen">詳細</button></span></div>`;
   bds.forEach(b => h += `<div class="dlbd">${esc(bdayText(b))}</div>`);
-  h += evs.length ? evs.map(e => `<button class="dli" data-id="${e.id}"><span class="cb" style="background:${evColor(e)}"></span>${S.show === 'both' ? avatar(e.owner) : ''}<span class="tm">${e.start || '終日'}</span><span class="tt">${esc(evLabel(e))}${placeName(e.place) ? `<br><span class="pl">📍${esc(placeName(e.place))}</span>` : ''}</span></button>`).join('') : `<div class="dlempty">予定はありません</div>`;
+  h += evs.length ? evs.map(e => `<button class="dli" data-id="${e.id}"><span class="cb" style="background:${evColor(e)}"></span>${S.show === 'both' || e.owner === 't' ? avatar(e.owner) : ''}<span class="tm">${e.start || '終日'}</span><span class="tt">${esc(evLabel(e))}${placeName(e.place) ? `<br><span class="pl">📍${esc(placeName(e.place))}</span>` : ''}</span></button>`).join('') : `<div class="dlempty">予定はありません</div>`;
   $('#dayList').innerHTML = h;
 }
 $('#dayList').onclick = e => { if (e.target.closest('#dlAdd')) { openEdit(null, selDay || todayStr()); return; } if (e.target.closest('#dlOpen')) { openDay(selDay); return; } const r = e.target.closest('.dli'); if (r) { const ev = DB.ev[r.dataset.id]; if (ev) openEdit(ev); } };
@@ -326,7 +327,7 @@ $('#bSet').onclick = openSettings;
 const ETO_ANIMAL = 'ねずみ,うし,とら,うさぎ,たつ,へび,うま,ひつじ,さる,とり,いぬ,いのしし'.split(',');
 function counts2() {
   const ey = {}, eym = {}, py = {}, pym = {};
-  for (const e of list('ev')) { if (e.repeat && e.repeat !== 'none') continue; if (S.show !== 'both' && e.owner !== S.show) continue; const a = e.date.slice(0, 4), b = e.date.slice(0, 7); ey[a] = (ey[a] || 0) + 1; eym[b] = (eym[b] || 0) + 1; }
+  for (const e of list('ev')) { if (e.repeat && e.repeat !== 'none') continue; if (e.owner === 't' || S.show !== 'both' && e.owner !== S.show) continue; const a = e.date.slice(0, 4), b = e.date.slice(0, 7); ey[a] = (ey[a] || 0) + 1; eym[b] = (eym[b] || 0) + 1; }
   for (const p of list('photo')) { const a = p.date.slice(0, 4), b = p.date.slice(0, 7); py[a] = (py[a] || 0) + 1; pym[b] = (pym[b] || 0) + 1; }
   return { ey, eym, py, pym };
 }
@@ -391,7 +392,7 @@ async function openDay(s) {
   info.events.forEach(t => h += `<span class="chip">${t}</span>`);
   info.rekichu.forEach(r => h += `<button class="chip ${GOOD.includes(r) ? 'good' : BAD.includes(r) ? 'bad' : ''}" data-i="${r}">${r}</button>`);
   h += `</div><div style="font-size:12px;color:var(--sub);margin-top:8px;text-align:center">※ 六曜や暦注をタップすると意味が出ます</div>`;
-  const evs = eventsOn(n);
+  const evs = eventsOn(n).concat(eventsOn(n, 't'));
   h += `<div class="sec"><h3 class="mincho"><svg class="fl" viewBox="0 0 24 24" width="22" height="22"><g fill="#c4432e"><circle cx="12" cy="5.5" r="4"/><circle cx="18.2" cy="10" r="4"/><circle cx="15.8" cy="17.3" r="4"/><circle cx="8.2" cy="17.3" r="4"/><circle cx="5.8" cy="10" r="4"/></g><circle cx="12" cy="12" r="2.6" fill="#e9b949"/></svg>予定<span class="hl"></span></h3>${evs.length ? evs.map(evRow).join('') : `<div class="empty">予定はありません</div>`}</div>`;
   h += `<div class="sec"><h3 class="mincho"><svg class="fl" viewBox="0 0 24 24" width="22" height="22"><g fill="#c4432e"><circle cx="12" cy="5.5" r="4"/><circle cx="18.2" cy="10" r="4"/><circle cx="15.8" cy="17.3" r="4"/><circle cx="8.2" cy="17.3" r="4"/><circle cx="5.8" cy="10" r="4"/></g><circle cx="12" cy="12" r="2.6" fill="#e9b949"/></svg>この日の写真<span class="hl"></span></h3><div class="photos" id="dPhotos"></div></div>`;
   $('#dBody').innerHTML = h; $('#dBody').scrollTop = 0;
@@ -455,13 +456,13 @@ $('#fPlace').onclick = async () => { const r = await pickPlace(F.place); if (r !
 function openEdit(ev, date) {
   editing = ev;
   const me = S.me || 'f';
-  $('#fOwner').querySelectorAll('button').forEach(b => b.innerHTML = avatar(b.dataset.v) + esc(NAME(b.dataset.v)));
+  $('#fOwner').querySelectorAll('button').forEach(b => { b.innerHTML = avatar(b.dataset.v) + esc(NAME(b.dataset.v)); if (b.dataset.v === 't') b.style.display = isAdmin() || (ev && ev.owner === 't') ? '' : 'none'; });
   $('#eTitle').textContent = ev ? '予定を直す' : '予定を入れる';
   $('#fTitle').value = ev ? ev.title || '' : '';
   $('#fDate').value = ev ? ev.date : date;
   $('#fEnd').value = ev && ev.end ? ev.end : '';
   $('#fMemo').value = ev ? ev.memo || '' : '';
-  const owner = ev ? ev.owner : (S.show === 'both' ? (me === 'admin' ? 'f' : me) : S.show);
+  const owner = ev ? ev.owner : (me === 'admin' ? 't' : S.show === 'both' ? me : S.show);
   segSet('#fOwner', owner);
   segSet('#fRepeat', ev ? ev.repeat || 'none' : 'none');
   F.who = ev ? [...(ev.who || [])] : []; F.place = ev ? ev.place || '' : ''; F.start = ev ? ev.start || '' : ''; F.stop = ev ? ev.stop || '' : '';
@@ -593,7 +594,7 @@ function drawFindChips() {
 }
 function runFind() {
   const t = FQ.text.trim();
-  let r = list('ev').filter(e => S.show === 'both' || e.owner === S.show);
+  let r = list('ev').filter(e => S.show === 'both' || e.owner === S.show || e.owner === 't' && isAdmin());
   if (t) r = r.filter(e => [e.title, e.memo, placeName(e.place), whoNames(e).join(' ')].join(' ').includes(t));
   if (FQ.who.size) r = r.filter(e => [...FQ.who].some(w => w === '@self' ? !(e.who || []).length || (e.who || []).includes('p_' + e.owner) : (e.who || []).includes(w) || w === 'p_' + e.owner && !(e.who || []).length));
   if (FQ.place.size) r = r.filter(e => FQ.place.has(e.place));

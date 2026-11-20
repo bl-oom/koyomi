@@ -1,5 +1,5 @@
 'use strict';
-const VERSION = 'ver 3.23';
+const VERSION = 'ver 3.24';
 let selDay = null;
 const MIN_YEAR = 1953;
 const K = window.Koyomi;
@@ -249,7 +249,7 @@ function render() {
   const cellsN = Math.ceil((last - start + 1) / 7) * 7;
   const counts = photoCountMap(); const today = todayStr();
   const rowH = fitGrid(cellsN / 7);
-  const SLOTS = rowH >= 86 ? 3 : rowH >= 62 ? 2 : 1;
+  const tight = rowH < 70; const SLOTS = Math.max(1, Math.min(4, Math.floor((rowH - (tight ? 33 : 37) * S.fs - 2) / ((tight ? 13.5 : 15.5) * S.fs))));
   if (!selDay || selDay.slice(0, 7) !== `${y}-${pad(m)}`) selDay = today.slice(0, 7) === `${y}-${pad(m)}` ? today : ymd(y, m, 1);
   let html = '';
   for (let i = 0; i < cellsN; i++) {
@@ -260,7 +260,9 @@ function render() {
     const hn = info.holiday || info.terms[0] || info.events[0] || '';
     const items = bds.map(b => `<div class="bd">${b.age === 0 ? '👶' : '🎂'}${esc(b.name)}${b.age ? b.age + '歳' : ''}</div>`)
       .concat(evs.map(e => `<div class="ev" style="background:${evColor(e)}">${S.show === 'both' && ICON[e.owner] ? avatar(e.owner) : ''}<span>${esc(evLabel(e))}</span></div>`));
-    let cellItems = items.length > SLOTS ? items.slice(0, SLOTS - 1).join('') + `<div class="more">ほか${items.length - SLOTS + 1}件</div>` : items.join('');
+    let cellItems = items.length <= SLOTS ? items.join('')
+      : SLOTS === 1 ? items[0].replace(/<\/div>$/, `<i class="plus">+${items.length - 1}</i></div>`)
+      : items.slice(0, SLOTS - 1).join('') + `<div class="more">ほか${items.length - SLOTS + 1}件</div>`;
     const showHn = hn && items.length < SLOTS;
     if (items.length === 1 && evs.length === 1) { const lc = Math.max(1, SLOTS - (showHn ? 1 : 0)); if (lc > 1) cellItems = cellItems.replace('<div class="ev" style="', `<div class="ev wrap" style="--lc:${lc};`); }
     if (showHn) cellItems = `<div class="hn${info.holiday ? ' isHol' : ''}">${esc(hn)}</div>` + cellItems;

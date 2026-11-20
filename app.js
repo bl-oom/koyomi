@@ -1,5 +1,5 @@
 'use strict';
-const VERSION = 'ver 3.13';
+const VERSION = 'ver 3.14';
 let selDay = null;
 const MIN_YEAR = 1953;
 const K = window.Koyomi;
@@ -843,7 +843,9 @@ function openSettings() {
   <div class="card"><h4>ふたりの同期</h4>
     <p class="sync" id="sSyncState">${S.sync ? esc(syncState || '準備中') : 'まだつながっていません'}</p>
     <p>${S.sync ? '予定・人・場所・写真・アイコンが、美之と博美のスマホで同じになります。' : '「つなぐリンク」を開くと、2台のスマホで予定が同じになります。'}</p>
-    <button class="wbtn${S.sync ? '' : ' hide'}" id="sSyncNow">今すぐ同期する</button></div>
+    <button class="wbtn${S.sync ? '' : ' hide'}" id="sSyncNow">今すぐ同期する</button>
+    <div style="margin-top:10px"><label style="font-size:13px;color:var(--sub);font-weight:700">つなぐリンクを貼り付ける</label>
+    <div class="addrow" style="margin-top:4px"><input class="inp" id="sLink" placeholder="長いリンクをここに貼る" autocomplete="off"><button id="sLinkGo">つなぐ</button></div></div></div>
   <div class="card"><h4>アイコン</h4><div class="icgrid">${['f', 'm'].map(o => `<div>${avatar(o)}<div class="nm">${esc(NAME(o))}</div><button class="wbtn" data-icon="${o}">写真を選ぶ</button><button class="wbtn${ICON[o] ? '' : ' hide'}" data-icondel="${o}">消す</button></div>`).join('')}</div>
     <p>好きな写真を選ぶと、丸く切り抜いてアイコンにします。</p></div>
   <div class="card"><h4>人の登録・誕生日</h4><p>「だれが」でえらぶ人と、誕生日（連絡先からも読めます）。名前の変更もここからできます。</p><button class="wbtn" id="sPeople">人の登録・誕生日を開く</button></div>
@@ -879,6 +881,13 @@ $('#sBody').onclick = e => {
   else if (b.id === 'sBgOff') { miscDel('bg').then(() => { markBgChanged(null); return applyBg(true); }).then(() => { toast('背景をなくしました'); openSettings(); }); }
   else if (b.id === 'sPeople') { hide('settings'); openPeople(); }
   else if (b.id === 'sSyncNow') syncNow();
+  else if (b.id === 'sLinkGo') {
+    const v = ($('#sLink').value || '').trim(); const i = v.indexOf('#sync=');
+    if (i < 0) { alertBox('つなぐリンクではないようです。\n「https://bl-oom.github.io/koyomi/#sync=」で始まる長いリンクを貼ってください。'); return; }
+    const q = new URLSearchParams(v.slice(i + 1)); const url = q.get('sync'), key = q.get('k');
+    if (!url || !key || !/^https:\/\/script\.google\.com\//.test(url)) { alertBox('リンクが途中で切れているようです。もう一度コピーしてください。'); return; }
+    S.sync = { url, key, last: 0 }; saveS(); toast('同期をつなぎました'); openSettings(); syncNow();
+  }
   else if (b.id === 'sHelp') location.href = 'help.html';
   else if (b.id === 'sCsv') { importMode = 'csv'; $('#fileCsv').value = ''; $('#fileCsv').click(); }
   else if (b.id === 'sImp') { importMode = 'json'; $('#fileCsv').value = ''; $('#fileCsv').click(); }

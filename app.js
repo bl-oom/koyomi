@@ -1,5 +1,5 @@
 'use strict';
-const VERSION = 'ver 3.10';
+const VERSION = 'ver 3.11';
 let selDay = null;
 const MIN_YEAR = 1953;
 const K = window.Koyomi;
@@ -448,7 +448,7 @@ function openEdit(ev, date) {
   const len = ev && ev.end ? dnOf(ev.end) - dnOf(ev.date) + 1 : 1; F.custom = ![1, 2, 3, 7].includes(len);
   drawWho(); drawPlace(); drawTimes(); drawSpan(); drawStamps(); drawColors();
   $('#eDel').classList.toggle('hide', !ev);
-  const hasMore = !!(ev && ((ev.who || []).length || (ev.repeat && ev.repeat !== 'none') || ev.stamp || ev.memo || ownColor(ev) || ev.owner !== (S.me === 'admin' ? ev.owner : S.me)));
+  const hasMore = !!(ev && (ev.end || (ev.who || []).length || (ev.repeat && ev.repeat !== 'none') || ev.stamp || ev.memo || ownColor(ev) || ev.owner !== (S.me === 'admin' ? ev.owner : S.me)));
   $('#fMore').style.display = hasMore ? '' : 'none'; $('#fMoreBtn').style.display = hasMore ? 'none' : '';
   $('#edit .sbody').scrollTop = 0;
   show('edit');

@@ -408,12 +408,13 @@ body.hasbg #main{background:transparent}
         <div><label style="font-size:13px;margin-bottom:4px">はじまり</label><button class="tbtn" id="fStart"></button></div>
         <div><label style="font-size:13px;margin-bottom:4px">おわり</label><button class="tbtn" id="fStop"></button></div>
       </div>
-      <div class="span" id="fSpan"><button data-n="1">1日</button><button data-n="2">2日間</button><button data-n="3">3日間</button><button data-n="7">1週間</button><button data-n="0">まで…</button></div>
-      <div id="fEndBox" style="margin-top:8px"><label style="font-size:13px;margin-bottom:4px">まで（おわりの日）</label><input class="inp" type="date" id="fEnd"></div>
     </div>
     <div class="fld"><label class="lbl2">場所<small>書かなくてもOK</small></label><button class="pickf" id="fPlace"></button></div>
-    <button class="moreBtn" id="fMoreBtn">＋ その他の設定（だれが・くりかえし・マーク・メモなど）</button>
+    <button class="moreBtn" id="fMoreBtn">＋ その他の設定（何日も続く・だれが・くりかえし・メモなど）</button>
     <div id="fMore" style="display:none">
+      <div class="fld"><label class="lbl2">何日も続く予定<small>旅行など</small></label>
+      <div class="span" id="fSpan"><button data-n="1">1日</button><button data-n="2">2日間</button><button data-n="3">3日間</button><button data-n="7">1週間</button><button data-n="0">まで…</button></div>
+      <div id="fEndBox" style="margin-top:8px"><label style="font-size:13px;margin-bottom:4px">まで（おわりの日）</label><input class="inp" type="date" id="fEnd"></div></div>
       <div class="fld"><label class="lbl2">だれが<small>書かなければ本人</small></label><button class="pickf" id="fWho"></button></div>
       <div class="fld"><label>だれのカレンダーに入れる？</label><div class="seg" id="fOwner"><button data-v="f"></button><button data-v="m"></button></div></div>
       <div class="fld"><label>くりかえし</label><div class="seg" id="fRepeat"><button data-v="none">なし</button><button data-v="week">毎週</button><button data-v="month">毎月</button><button data-v="year">毎年</button></div></div>

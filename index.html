@@ -388,6 +388,17 @@ body.tight .cell .hn,body.tight .cell .bd{font-size:calc(9px*var(--fs))}
 .cell .ev,.cell .bd,.cell .hn{font-size:calc(10.5px*var(--fs));line-height:1.4}
 .cell .ev{font-weight:700;padding:0 2px;margin-top:1px;border-radius:4px}
 body.tight .cell .ev,body.tight .cell .bd,body.tight .cell .hn{font-size:calc(9.5px*var(--fs));line-height:1.3}
+
+/* v3.21 */
+.cell .ev.wrap{align-items:flex-start;white-space:normal}
+.cell .ev.wrap span{white-space:normal;word-break:break-all;overflow-wrap:anywhere;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:var(--lc);overflow:hidden}
+.dlh .dlBtns{margin-left:auto;display:flex;gap:6px;align-items:center;align-self:center}
+.dlh .dlAdd{font-size:14px;font-weight:700;color:#fff;background:#c4432e;border-radius:999px;padding:7px 14px;box-shadow:0 1px 2px rgba(0,0,0,.15)}
+.dlh .dlBtns .open{margin-left:0;font-size:12px;padding:4px 10px}
+.dlh{flex-wrap:nowrap;align-items:center}
+.dlh .dlL{display:flex;flex-direction:column;min-width:0;line-height:1.2}
+.dlh .dlL .info{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dlh .dlBtns{flex-shrink:0}
 </style>
 </head>
 <body>

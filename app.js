@@ -1,5 +1,5 @@
 'use strict';
-const VERSION = 'ver 3.20';
+const VERSION = 'ver 3.21';
 let selDay = null;
 const MIN_YEAR = 1953;
 const K = window.Koyomi;
@@ -261,7 +261,9 @@ function render() {
     const items = bds.map(b => `<div class="bd">${b.age === 0 ? '👶' : '🎂'}${esc(b.name)}${b.age ? b.age + '歳' : ''}</div>`)
       .concat(evs.map(e => `<div class="ev" style="background:${evColor(e)}">${S.show === 'both' && ICON[e.owner] ? avatar(e.owner) : ''}<span>${esc(evLabel(e))}</span></div>`));
     let cellItems = items.length > SLOTS ? items.slice(0, SLOTS - 1).join('') + `<div class="more">ほか${items.length - SLOTS + 1}件</div>` : items.join('');
-    if (hn && items.length < SLOTS) cellItems = `<div class="hn${info.holiday ? ' isHol' : ''}">${esc(hn)}</div>` + cellItems;
+    const showHn = hn && items.length < SLOTS;
+    if (items.length === 1 && evs.length === 1) { const lc = Math.max(1, SLOTS - (showHn ? 1 : 0)); if (lc > 1) cellItems = cellItems.replace('<div class="ev" style="', `<div class="ev wrap" style="--lc:${lc};`); }
+    if (showHn) cellItems = `<div class="hn${info.holiday ? ' isHol' : ''}">${esc(hn)}</div>` + cellItems;
     html += `<div class="${cls.join(' ')}" data-d="${s}">
       <div class="num mincho">${g.d === 1 && g.m !== m ? g.m + '/' + g.d : g.d}</div>
       <div class="rk${info.rokuyo === '大安' ? ' taian' : ''}">${info.rokuyo}${S.cellRekichu && good ? '<span class="dot"></span>' : ''}</div>
@@ -301,12 +303,12 @@ function drawDayList() {
   const s = selDay; if (!s) return; const p = parseYmd(s); const info = K.info(p.y, p.m, p.d);
   const evs = eventsOn(info.n); const bds = birthdaysOn(p.y, p.m, p.d);
   const extra = [info.holiday, ...info.terms, ...info.rekichu.filter(r => r === '天赦日' || r === '一粒万倍日')].filter(Boolean);
-  let h = `<div class="dlh"><span class="dd mincho">${p.m}月${p.d}日（${WD[info.w]}）</span><span class="info">${info.rokuyo === '大安' ? '<b>大安</b>' : info.rokuyo}${extra.length ? '・' + esc(extra.join('・')) : ''}</span><button class="open" id="dlOpen">くわしく ›</button></div>`;
+  let h = `<div class="dlh"><span class="dlL"><span class="dd mincho">${p.m}月${p.d}日（${WD[info.w]}）</span><span class="info">${info.rokuyo === '大安' ? '<b>大安</b>' : info.rokuyo}${extra.length ? '・' + esc(extra.join('・')) : ''}</span></span><span class="dlBtns"><button class="dlAdd" id="dlAdd">＋ 予定を入れる</button><button class="open" id="dlOpen">詳細</button></span></div>`;
   bds.forEach(b => h += `<div class="dlbd">${esc(bdayText(b))}</div>`);
   h += evs.length ? evs.map(e => `<button class="dli" data-id="${e.id}"><span class="cb" style="background:${evColor(e)}"></span>${S.show === 'both' ? avatar(e.owner) : ''}<span class="tm">${e.start || '終日'}</span><span class="tt">${esc(evLabel(e))}${placeName(e.place) ? `<br><span class="pl">📍${esc(placeName(e.place))}</span>` : ''}</span></button>`).join('') : `<div class="dlempty">予定はありません</div>`;
   $('#dayList').innerHTML = h;
 }
-$('#dayList').onclick = e => { if (e.target.closest('#dlOpen')) { openDay(selDay); return; } const r = e.target.closest('.dli'); if (r) { const ev = DB.ev[r.dataset.id]; if (ev) openEdit(ev); } };
+$('#dayList').onclick = e => { if (e.target.closest('#dlAdd')) { openEdit(null, selDay || todayStr()); return; } if (e.target.closest('#dlOpen')) { openDay(selDay); return; } const r = e.target.closest('.dli'); if (r) { const ev = DB.ev[r.dataset.id]; if (ev) openEdit(ev); } };
 (() => { let x0 = null, y0 = 0; const g = $('#grid');
   g.addEventListener('touchstart', e => { x0 = e.touches[0].clientX; y0 = e.touches[0].clientY; }, { passive: true });
   g.addEventListener('touchend', e => { if (x0 == null) return; const dx = e.changedTouches[0].clientX - x0, dy = e.changedTouches[0].clientY - y0; if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.5) move(dx < 0 ? 1 : -1); x0 = null; }, { passive: true });

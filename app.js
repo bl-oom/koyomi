@@ -1,5 +1,5 @@
 'use strict';
-const VERSION = 'ver 2.01';
+const VERSION = 'ver 2.02';
 const K = window.Koyomi;
 const $ = s => document.querySelector(s);
 const pad = n => String(n).padStart(2, '0');
@@ -278,7 +278,17 @@ function openMonths(y) {
   for (let m = 1; m <= 12; m++) { const k = `${y}-${pad(m)}`; h += `<button class="mbtn${y === t.getFullYear() && m === t.getMonth() + 1 ? ' now' : ''}" data-m="${m}"><div class="m">${m}<small style="font-size:.55em">月</small></div><div class="w">${['', '睦月', '如月', '弥生', '卯月', '皐月', '水無月', '文月', '葉月', '長月', '神無月', '霜月', '師走'][m]}</div><div class="c">${countTx(c.eym[k], c.pym[k])}</div></button>`; }
   $('#jTitle').textContent = `${y}年`; $('#jBody').innerHTML = h + '</div>'; $('#jBody').dataset.y = y; $('#jBody').scrollTop = 0; $('#jYears').classList.remove('hide');
 }
-$('#title').onclick = openYears;
+async function openYearWheel() {
+  const c = counts2(); const t = new Date();
+  const years = []; for (let y = 2000; y <= 2060; y++) years.push({ v: y, t: String(y) });
+  const r = await wheelPick({ title: '年と月をえらぶ', noneLabel: '今月にもどる',
+    cols: [{ items: years, init: cur.y, unit: '年', uoff: 44 }, { items: Array.from({ length: 12 }, (_, i) => ({ v: i + 1, t: String(i + 1) })), init: cur.m, unit: '月' }],
+    info: ([y, m]) => { const k = `${y}-${pad(m)}`; const x = countTx(c.eym[k], c.pym[k]); return `${K.wareki(y, m, 15)}・${ETO_ANIMAL[((y - 4) % 12 + 12) % 12]}年${x ? '　' + x : ''}`; } });
+  if (r === undefined) return;
+  cur = r === '' ? { y: t.getFullYear(), m: t.getMonth() + 1 } : { y: r[0], m: r[1] };
+  render();
+}
+$('#title').onclick = openYearWheel;
 $('#jBody').onclick = e => {
   const yb = e.target.closest('.ybtn'); if (yb) { openMonths(+yb.dataset.y); return; }
   const mb = e.target.closest('.mbtn'); if (mb) { cur = { y: +$('#jBody').dataset.y, m: +mb.dataset.m }; hide('jump'); render(); }
@@ -412,21 +422,35 @@ $('#eDel').onclick = async () => {
   if ($('#day').classList.contains('on')) openDay(dayCur); else if ($('#find').classList.contains('on')) runFind(); else render();
 };
 
-// 時間のホイール
-function wheel(title, init) {
+// くるくる選ぶホイール（時間・年月）
+function wheelPick({ title, cols, noneLabel, info }) {
   return new Promise(res => {
-    const H = $('#wH'), M = $('#wM');
+    const box = $('#wCols'); const n = cols.length;
+    box.style.gridTemplateColumns = `repeat(${n},1fr)`;
     const padr = '<div class="padd"></div><div class="padd"></div>';
-    H.innerHTML = padr + Array.from({ length: 24 }, (_, i) => `<div>${i}</div>`).join('') + padr;
-    M.innerHTML = padr + Array.from({ length: 12 }, (_, i) => `<div>${pad(i * 5)}</div>`).join('') + padr;
-    $('#wTitle').textContent = title; $('#wheel').classList.add('on');
-    const [h, m] = (init || '10:00').split(':').map(Number);
-    H.scrollTop = h * 44; M.scrollTop = Math.round(m / 5) % 12 * 44;
-    const done = v => { $('#wheel').classList.remove('on'); $('#wOk').onclick = $('#wNone').onclick = $('#wheel').onclick = null; res(v); };
-    $('#wOk').onclick = () => { const hh = Math.max(0, Math.min(23, Math.round(H.scrollTop / 44))), mm = Math.max(0, Math.min(11, Math.round(M.scrollTop / 44))) * 5; done(`${pad(hh)}:${pad(mm)}`); };
+    box.innerHTML = cols.map((c, i) => `<div class="wcol" data-c="${i}">${padr}${c.items.map(it => `<div>${esc(it.t)}</div>`).join('')}${padr}</div>`).join('') + '<div class="wsel"></div>' +
+      cols.map((c, i) => c.unit ? `<span class="wunit" style="left:calc(${(i + .5) * 100 / n}% + ${c.uoff || 30}px)">${c.unit}</span>` : '').join('');
+    const els = [...box.querySelectorAll('.wcol')];
+    const idx = i => Math.max(0, Math.min(cols[i].items.length - 1, Math.round(els[i].scrollTop / 44)));
+    const vals = () => els.map((_, i) => cols[i].items[idx(i)].v);
+    const upd = () => { $('#wInfo').textContent = info ? info(vals()) : ''; };
+    $('#wTitle').textContent = title; $('#wNone').textContent = noneLabel || 'なし';
+    $('#wheel').classList.add('on');
+    els.forEach((el, i) => { const k = Math.max(0, cols[i].items.findIndex(it => it.v === cols[i].init)); el.scrollTop = k * 44; let t; el.onscroll = () => { clearTimeout(t); t = setTimeout(upd, 60); }; });
+    upd();
+    const done = v => { $('#wheel').classList.remove('on'); $('#wOk').onclick = $('#wNone').onclick = $('#wheel').onclick = null; els.forEach(el => el.onscroll = null); res(v); };
+    $('#wOk').onclick = () => done(vals());
     $('#wNone').onclick = () => done('');
     $('#wheel').onclick = e => { if (e.target.id === 'wheel') done(undefined); };
   });
+}
+async function wheel(title, init) {
+  const [h, m] = (init || '10:00').split(':').map(Number);
+  const r = await wheelPick({ title, noneLabel: 'なし',
+    cols: [{ items: Array.from({ length: 24 }, (_, i) => ({ v: i, t: String(i) })), init: h, unit: '時' },
+           { items: Array.from({ length: 12 }, (_, i) => ({ v: i * 5, t: pad(i * 5) })), init: Math.round(m / 5) % 12 * 5, unit: '分' }] });
+  if (r === undefined || r === '') return r;
+  return `${pad(r[0])}:${pad(r[1])}`;
 }
 
 // ===== 人・場所をえらぶ =====

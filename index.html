@@ -246,6 +246,7 @@ input[type=date].inp,input[type=time].inp{-webkit-appearance:none;appearance:non
 .wcol .padd{scroll-snap-align:none}
 .wsel{position:absolute;left:0;right:0;top:88px;height:44px;border-top:2px solid var(--gold);border-bottom:2px solid var(--gold);pointer-events:none;background:rgba(184,137,43,.08);border-radius:6px}
 .wunit{position:absolute;top:88px;line-height:44px;font-size:16px;color:var(--sub);pointer-events:none}
+.winfo{height:24px;margin-top:8px;text-align:center;font-size:15px;color:var(--sub);font-weight:700}
 .wbtns{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
 .wbtns button{height:54px}
 .sync{font-weight:700}
@@ -407,7 +408,8 @@ input[type=date].inp,input[type=time].inp{-webkit-appearance:none;appearance:non
 
 <div id="wheel"><div class="box">
   <div class="wt" id="wTitle">時間</div>
-  <div class="wcols"><div class="wcol" id="wH"></div><div class="wcol" id="wM"></div><div class="wsel"></div><span class="wunit" style="left:calc(25% + 28px)">時</span><span class="wunit" style="left:calc(75% + 28px)">分</span></div>
+  <div class="wcols" id="wCols"></div>
+  <div class="winfo" id="wInfo"></div>
   <div class="wbtns"><button class="big" id="wNone">なし</button><button class="big primary" id="wOk">決定</button></div>
 </div></div>
 <div id="dlg"><div class="box"><div class="msg" id="dlgMsg"></div><div id="dlgExtra"></div><div class="btns" id="dlgBtns"></div></div></div>

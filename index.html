@@ -250,11 +250,84 @@ input[type=date].inp,input[type=time].inp{-webkit-appearance:none;appearance:non
 .wbtns{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
 .wbtns button{height:54px}
 .sync{font-weight:700}
+
+/* ===== v3 和紙デザイン ===== */
+body{background:#f6efe0 url(img/washi.jpg) repeat;background-size:360px}
+#main{background:var(--sart) center top/cover no-repeat}
+body[data-season=spring]{--sart:url(img/spring.jpg)} body[data-season=summer]{--sart:url(img/summer.jpg)}
+body[data-season=autumn]{--sart:url(img/autumn.jpg)} body[data-season=winter]{--sart:url(img/winter.jpg)}
+body.hasbg #main{background:transparent}
+#apphead{flex:none;height:30px;display:flex;align-items:center;justify-content:center;gap:6px;font-size:19px;font-weight:700;color:#3a2a1e;letter-spacing:.12em}
+#apphead .hanko{font-family:"Hiragino Mincho ProN","Noto Serif JP",serif;background:#c4432e;color:#fff;font-size:12px;width:20px;height:20px;border-radius:3px;display:flex;align-items:center;justify-content:center;letter-spacing:0;transform:rotate(-4deg)}
+#head{height:78px}
+.navbtn{width:46px;height:46px;margin:0 9px;background:rgba(243,233,214,.9);border:1px solid #e3d5bb;font-size:26px;color:#5a4030;box-shadow:0 1px 2px rgba(80,50,20,.12)}
+#title .ym{font-size:calc(34px*var(--fs));letter-spacing:.01em;color:#2b2018}
+#title .ym small{font-size:.55em;margin:0 3px 0 1px}
+#title .ym .tri{font-size:.4em;color:#8a7560}
+#title .sub{display:flex;align-items:center;justify-content:center;gap:8px;font-size:calc(12.5px*var(--fs));font-weight:700;color:#4a3a2c;margin-top:3px}
+#title .sub .gl{flex:0 1 34px;height:1.5px;background:linear-gradient(90deg,transparent,#c9a24d)}
+#title .sub .gl:last-child{background:linear-gradient(90deg,#c9a24d,transparent)}
+#week{margin:4px 6px 0;background:rgba(239,226,200,.92);border:1px solid #e0cfae;border-bottom:none;border-radius:10px 10px 0 0;padding:6px 0;font-size:calc(15px*var(--fs));font-family:"Hiragino Mincho ProN","Noto Serif JP",serif}
+#grid{margin:0 6px 4px;border:1px solid #e0cfae;border-radius:0 0 10px 10px;overflow:hidden;background:#e7dcc6}
+.cell{background:rgba(255,252,244,.9);align-items:center;padding:3px 1px 0;text-align:center}
+.cell.out{background:rgba(246,240,228,.9)}
+.cell .num{font-size:calc(21px*var(--fs));font-weight:700;line-height:1.1;color:#2b2018}
+.cell .rk{font-size:calc(10.5px*var(--fs));color:#5c4d40;white-space:nowrap;display:flex;align-items:center;gap:2px;line-height:1.3}
+.cell .rk.taian{color:#c4432e;font-weight:700}
+.cell .dot{width:7px;height:7px;border-radius:50%;background:radial-gradient(circle at 35% 35%,#f3d27a,#c9962e);display:inline-block}
+.cell .hn{font-size:calc(8.5px*var(--fs));color:#7a6a5a;white-space:nowrap;overflow:hidden;max-width:100%;line-height:1.25}
+.cell .hn.isHol{color:#c4432e;font-weight:700}
+.cell.hol{background:rgba(250,228,222,.92)}
+.cell.today{box-shadow:inset 0 0 0 2.5px #c9962e;background:rgba(255,246,220,.95)}
+.cell.today .num{background:none;color:inherit;padding:0}
+.cell.sun .num,.cell.hol .num,.cell.today.sun .num,.cell.today.hol .num{color:#c4432e}
+.cell.sat .num,.cell.today.sat .num{color:#2d5f8f}
+.ev{border-radius:6px;justify-content:center;font-size:calc(10px*var(--fs));padding:1px 3px;margin-top:2px;width:calc(100% - 4px);box-shadow:0 1px 1px rgba(0,0,0,.08)}
+.bd{font-size:calc(9px*var(--fs));color:#a0522d;font-weight:700}
+.cell .marks{right:2px;bottom:2px}
+#bar{background:rgba(255,251,242,.96);border-top:1px solid #e3d5bb}
+.bbtn{color:#5a4030;gap:2px}
+.bbtn .ic{height:28px;display:flex;align-items:center}
+.bbtn .si{display:block}
+.copy{background:rgba(255,251,242,.96)}
+/* 日の詳細 */
+#day{background:#f6efe0 url(img/washi.jpg) repeat;background-size:360px}
+#day .shead,#edit .shead,#find .shead,#people .shead,#settings .shead,#jump .shead,#pick .shead{background:rgba(255,251,242,.92)}
+#day .shead .apt{font-size:20px;letter-spacing:.12em;color:#3a2a1e}
+#dBody{background:linear-gradient(to bottom,rgba(246,239,224,0) 0,rgba(246,239,224,0) 190px,rgba(246,239,224,.93) 400px),var(--sart) center top/170% auto no-repeat}
+.dy2{text-align:center;font-size:13px;color:#7a6a5a;margin-top:2px}
+.dhead{justify-content:center;align-items:baseline;gap:16px}
+.dhead .dd{font-size:calc(96px*var(--fs));letter-spacing:-.02em}
+.dhead .dw{font-size:calc(36px*var(--fs));font-weight:700;padding-bottom:0}
+.brush{height:9px;margin:2px auto 0;width:72%;border-radius:50%;background:linear-gradient(90deg,rgba(196,67,46,0),#c4432e 12%,#b8392a 70%,rgba(196,67,46,.2));transform:rotate(-1.2deg)}
+.dsub{text-align:center;margin-top:12px;font-size:calc(22px*var(--fs));font-weight:700;color:#3a2a1e}
+#dBody .chips{justify-content:center;gap:8px;margin-top:14px}
+#dBody .chip{font-size:calc(16px*var(--fs));padding:8px 16px;background:#f6e3dc;color:#3a2a1e;border:none}
+#dBody .chip.good{background:linear-gradient(180deg,#f6dc8a,#e2b445);color:#3a2a1e}
+#dBody .chip.bad{background:#dedad6;color:#3a2a1e}
+#dBody .chip.hol{background:#f7d8d0;color:#b0352a}
+#dBody .chip.rk{background:#f6e3dc;border:none;color:#3a2a1e}
+#dBody .chip.rk.taian{background:#c4432e;color:#fff}
+.sec h3{font-size:calc(22px*var(--fs));color:#3a2a1e;gap:8px;margin-bottom:10px}
+.sec h3 .hl{flex:1;height:2px;background:linear-gradient(90deg,#c4432e,rgba(196,67,46,.15));margin-left:8px;border-radius:2px}
+.evrow{background:rgba(255,252,246,.96);border:none;border-radius:14px;padding:12px 14px 12px 0;gap:12px;align-items:center;box-shadow:0 2px 6px rgba(80,50,20,.08);overflow:hidden}
+.evrow .bar{width:7px;align-self:stretch;border-radius:0}
+.evrow .eav .av,.evrow .eav .avt{width:54px;height:54px;font-size:22px;display:flex}
+.evrow .tt{font-size:calc(21px*var(--fs));color:#2b2018}
+.evrow .t2{margin-right:10px}
+.pl2{display:flex;align-items:center;gap:4px;font-size:calc(15px*var(--fs));color:#4a3a2c;margin-top:3px}
+.photos{gap:8px}
+.photos img{border-radius:10px;box-shadow:0 1px 4px rgba(0,0,0,.12)}
+.big.primary{background:#4a2c1a}
+.big.outline{background:#fffdf8;border:1.5px solid #4a2c1a;color:#4a2c1a}
+.big .si{width:22px;height:22px}
+.hbtn.primary{background:#4a2c1a}
 </style>
 </head>
 <body>
 <div id="bg"></div>
 <div id="main">
+  <div id="apphead"><span class="mincho">こよみ帳</span><span class="hanko">暦</span></div>
   <div id="head">
     <button class="navbtn" id="prev" aria-label="前の月">‹</button>
     <div id="title"></div>
@@ -263,12 +336,12 @@ input[type=date].inp,input[type=time].inp{-webkit-appearance:none;appearance:non
   <div id="week"><div>日</div><div>月</div><div>火</div><div>水</div><div>木</div><div>金</div><div>土</div></div>
   <div id="grid"></div>
   <div id="bar">
-    <button class="bbtn" id="bToday"><span class="ic">◎</span>今日</button>
-    <button class="bbtn" id="bAdd"><span class="ic">＋</span>予定</button>
-    <button class="bbtn" id="bPhoto"><span class="ic">📷</span>写真</button>
+    <button class="bbtn" id="bToday"><span class="ic"><svg class="si" viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/></svg></span>今日</button>
+    <button class="bbtn" id="bAdd"><span class="ic"><svg class="si" viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4M12 13v5M9.5 15.5h5"/></svg></span>予定</button>
+    <button class="bbtn" id="bPhoto"><span class="ic"><svg class="si" viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9.5" r="1.8"/><path d="M21 16l-5-5-9 9"/></svg></span>写真</button>
     <button class="bbtn" id="bWho"><span class="ic" id="whoIc"></span><span id="whoTx">ふたり</span></button>
-    <button class="bbtn" id="bFind"><span class="ic">🔍</span>さがす</button>
-    <button class="bbtn" id="bSet"><span class="ic">⚙︎</span>設定</button>
+    <button class="bbtn" id="bFind"><span class="ic"><svg class="si" viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.2-4.2"/></svg></span>さがす</button>
+    <button class="bbtn" id="bSet"><span class="ic"><svg class="si" viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></span>設定</button>
   </div>
   <div class="copy" id="copy"></div>
 </div>
@@ -283,7 +356,7 @@ input[type=date].inp,input[type=time].inp{-webkit-appearance:none;appearance:non
   <div class="sbody" id="dBody"></div>
   <div class="sfoot">
     <button class="big primary" id="dAdd">＋ 予定を入れる</button>
-    <button class="big" id="dPhoto">📷 写真を見る</button>
+    <button class="big outline" id="dPhoto"><svg class="si" viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9.5" r="1.8"/><path d="M21 16l-5-5-9 9"/></svg>写真を見る</button>
   </div>
 </div>
 

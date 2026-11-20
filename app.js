@@ -1,5 +1,5 @@
 'use strict';
-const VERSION = 'ver 2.05';
+const VERSION = 'ver 3.00';
 const MIN_YEAR = 1953;
 const K = window.Koyomi;
 const $ = s => document.querySelector(s);
@@ -240,7 +240,9 @@ function render() {
   document.documentElement.style.setProperty('--fs', S.fs);
   const { y, m } = cur;
   const ki = K.info(y, m, 15);
-  $('#title').innerHTML = `<div class="ym mincho">${y}<small>年</small> ${m}<small>月</small><span class="tri">▼</span></div><div class="sub">${K.wareki(y, m, 15)}　旧暦 ${ki.kyurekiName}ごろ　${K.yearEto(y)}</div>`;
+  const season = m >= 3 && m <= 5 ? 'spring' : m >= 6 && m <= 8 ? 'summer' : m >= 9 && m <= 11 ? 'autumn' : 'winter';
+  document.body.dataset.season = season;
+  $('#title').innerHTML = `<div class="ym mincho">${y}<small>年</small>${m}<small>月</small><span class="tri">▾</span></div><div class="sub"><span class="gl"></span>${K.wareki(y, m, 15)}　旧暦 ${ki.kyurekiName}　${ETO_ANIMAL[((y - 4) % 12 + 12) % 12]}年<span class="gl"></span></div>`;
   const first = K.dn(y, m, 1); const start = first - K.fromDn(first).w;
   const counts = photoCountMap(); const today = todayStr();
   let html = '';
@@ -252,12 +254,13 @@ function render() {
     const good = info.rekichu.some(r => r === '天赦日' || r === '一粒万倍日');
     const hn = info.holiday || info.terms[0] || info.events[0] || '';
     html += `<div class="${cls.join(' ')}" data-d="${s}">
-      <div class="top"><span class="num">${g.d}</span><span class="rk${info.rokuyo === '大安' ? ' taian' : ''}">${info.rokuyo}</span></div>
-      <div class="hn"${info.holiday ? '' : ' style="color:var(--sub)"'}>${esc(hn)}</div>
+      <div class="num mincho">${g.d === 1 && g.m !== m ? g.m + '/' + g.d : g.d}</div>
+      <div class="rk${info.rokuyo === '大安' ? ' taian' : ''}">${info.rokuyo}${S.cellRekichu && good ? '<span class="dot"></span>' : ''}</div>
+      ${hn ? `<div class="hn${info.holiday ? ' isHol' : ''}">${esc(hn)}</div>` : ''}
       ${bds.map(b => `<div class="bd">${b.age === 0 ? '👶' : '🎂'}${esc(b.name)}${b.age ? b.age + '歳' : ''}</div>`).join('')}
       ${evs.slice(0, maxEv).map(e => `<div class="ev" style="background:${evColor(e)}">${S.show === 'both' && ICON[e.owner] ? avatar(e.owner) : ''}<span>${esc(evLabel(e))}</span></div>`).join('')}
       ${evs.length > maxEv ? `<div class="more">ほか${evs.length - maxEv}件</div>` : ''}
-      <div class="marks">${counts[s] ? `<span class="cam">📷${counts[s]}</span>` : ''}${S.cellRekichu && good ? '<span class="dot"></span>' : ''}</div>
+      <div class="marks">${counts[s] ? `<span class="cam">📷${counts[s]}</span>` : ''}</div>
     </div>`;
   }
   $('#grid').innerHTML = html;
@@ -331,15 +334,16 @@ function evRow(e) {
   const pl = placeName(e.place);
   const tm = e.start ? e.start + (e.stop ? '<br>〜' + e.stop : '') : (e.stop ? '〜' + e.stop : '');
   const span = e.end ? `<div class="mm">📅 ${e.date.slice(5).replace('-', '/')}〜${e.end.slice(5).replace('-', '/')}</div>` : '';
-  return `<div class="evrow" data-id="${e.id}"><div class="bar" style="background:${evColor(e)}"></div><div class="tm">${tm || '　'}</div><div style="flex:1;min-width:0"><div class="whorow">${avatar(e.owner)}${esc(NAME(e.owner))}のカレンダー</div><div class="tt">${esc(evLabel(e))}</div>${pl ? `<div class="mm">📍 ${esc(pl)}</div>` : ''}${span}${e.memo ? `<div class="mm">${esc(e.memo)}</div>` : ''}${e.repeat && e.repeat !== 'none' ? `<div class="mm">🔁 ${{ week: '毎週', month: '毎月', year: '毎年' }[e.repeat]}</div>` : ''}</div></div>`;
+  const t2 = e.start ? `<span class="t2">${e.start}${e.stop ? '〜' + e.stop : ''}</span>` : '';
+  return `<div class="evrow" data-id="${e.id}"><div class="bar" style="background:${evColor(e)}"></div><div class="eav">${avatar(e.owner)}</div><div style="flex:1;min-width:0"><div class="tt">${t2}${esc(evLabel(e))}</div>${pl ? `<div class="pl2"><svg viewBox="0 0 24 24" width="16" height="16"><path fill="#c4432e" d="M12 2a7 7 0 0 0-7 7c0 5 7 13 7 13s7-8 7-13a7 7 0 0 0-7-7zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5z"/></svg>${esc(pl)}</div>` : ''}<div class="mm" style="font-size:12px">${esc(NAME(e.owner))}のカレンダー</div>${span}${e.memo ? `<div class="mm">${esc(e.memo)}</div>` : ''}${e.repeat && e.repeat !== 'none' ? `<div class="mm">🔁 ${{ week: '毎週', month: '毎月', year: '毎年' }[e.repeat]}</div>` : ''}</div></div>`;
 }
 async function openDay(s) {
   dayCur = s; const p = parseYmd(s); const info = K.info(p.y, p.m, p.d); const n = info.n;
-  $('#dTitle').textContent = `${p.m}月${p.d}日`;
+  $('#dTitle').innerHTML = `<span class="apt mincho">こよみ帳</span>`;
   const wc = info.w === 0 || info.holiday ? 'var(--sun)' : info.w === 6 ? 'var(--sat)' : 'var(--ink)';
   const kr = info.kyureki;
-  let h = `<div class="dhead"><div class="dd mincho" style="color:${wc}">${p.d}</div><div class="dw" style="color:${wc}">${WD[info.w]}曜日</div><div class="dy">${p.y}年${p.m}月・${K.wareki(p.y, p.m, p.d)}</div></div>`;
-  h += `<div class="dsub">旧暦 <b>${kr.leap ? '閏' : ''}${kr.m}月${kr.d}日</b>（${info.kyurekiName}）　干支 <b>${info.kanshi}</b>${info.fullMoon ? '　🌕満月' : info.newMoon ? '　🌑新月' : ''}</div>`;
+  let h = `<div class="dy2">${p.y}年${p.m}月・${K.wareki(p.y, p.m, p.d)}</div><div class="dhead"><div class="dd mincho" style="color:${wc === 'var(--ink)' ? '#4a2c1a' : wc}">${p.d}</div><div class="dw mincho" style="color:${wc === 'var(--ink)' ? '#4a2c1a' : wc}">${WD[info.w]}曜日</div></div><div class="brush"></div>`;
+  h += `<div class="dsub mincho">旧暦 ${kr.leap ? '閏' : ''}${kr.m}月${kr.d}日　干支 ${info.kanshi}${info.fullMoon ? '　🌕' : info.newMoon ? '　🌑' : ''}</div>`;
   h += `<div class="chips">`;
   birthdaysOn(p.y, p.m, p.d).forEach(b => h += `<span class="chip hol">${esc(bdayText(b))}</span>`);
   if (info.holiday) h += `<span class="chip hol">${info.holiday}</span>`;
@@ -347,10 +351,10 @@ async function openDay(s) {
   info.terms.forEach(t => h += `<span class="chip">${t}</span>`);
   info.events.forEach(t => h += `<span class="chip">${t}</span>`);
   info.rekichu.forEach(r => h += `<button class="chip ${GOOD.includes(r) ? 'good' : BAD.includes(r) ? 'bad' : ''}" data-i="${r}">${r}</button>`);
-  h += `</div><div style="font-size:12px;color:var(--sub);margin-top:6px">※ 六曜や暦注をタップすると意味が出ます</div>`;
+  h += `</div><div style="font-size:12px;color:var(--sub);margin-top:8px;text-align:center">※ 六曜や暦注をタップすると意味が出ます</div>`;
   const evs = eventsOn(n);
-  h += `<div class="sec"><h3>予定</h3>${evs.length ? evs.map(evRow).join('') : `<div class="empty">予定はありません</div>`}</div>`;
-  h += `<div class="sec"><h3>この日の写真</h3><div class="photos" id="dPhotos"></div></div>`;
+  h += `<div class="sec"><h3 class="mincho"><svg class="fl" viewBox="0 0 24 24" width="22" height="22"><g fill="#c4432e"><circle cx="12" cy="5.5" r="4"/><circle cx="18.2" cy="10" r="4"/><circle cx="15.8" cy="17.3" r="4"/><circle cx="8.2" cy="17.3" r="4"/><circle cx="5.8" cy="10" r="4"/></g><circle cx="12" cy="12" r="2.6" fill="#e9b949"/></svg>予定<span class="hl"></span></h3>${evs.length ? evs.map(evRow).join('') : `<div class="empty">予定はありません</div>`}</div>`;
+  h += `<div class="sec"><h3 class="mincho"><svg class="fl" viewBox="0 0 24 24" width="22" height="22"><g fill="#c4432e"><circle cx="12" cy="5.5" r="4"/><circle cx="18.2" cy="10" r="4"/><circle cx="15.8" cy="17.3" r="4"/><circle cx="8.2" cy="17.3" r="4"/><circle cx="5.8" cy="10" r="4"/></g><circle cx="12" cy="12" r="2.6" fill="#e9b949"/></svg>この日の写真<span class="hl"></span></h3><div class="photos" id="dPhotos"></div></div>`;
   $('#dBody').innerHTML = h; $('#dBody').scrollTop = 0;
   show('day');
   const ps = list('photo').filter(x => x.date === s).sort((a, b) => (a.taken || '').localeCompare(b.taken || ''));

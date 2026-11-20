@@ -1,5 +1,5 @@
 'use strict';
-const VERSION = 'ver 3.15';
+const VERSION = 'ver 3.16';
 let selDay = null;
 const MIN_YEAR = 1953;
 const K = window.Koyomi;
@@ -248,6 +248,8 @@ function render() {
   const last = K.dn(m === 12 ? y + 1 : y, m === 12 ? 1 : m + 1, 1) - 1;
   const cellsN = Math.ceil((last - start + 1) / 7) * 7;
   const counts = photoCountMap(); const today = todayStr();
+  const rowH = fitGrid(cellsN / 7);
+  const SLOTS = rowH >= 86 ? 3 : rowH >= 66 ? 2 : 1;
   if (!selDay || selDay.slice(0, 7) !== `${y}-${pad(m)}`) selDay = today.slice(0, 7) === `${y}-${pad(m)}` ? today : ymd(y, m, 1);
   let html = '';
   for (let i = 0; i < cellsN; i++) {
@@ -258,7 +260,6 @@ function render() {
     const hn = info.holiday || info.terms[0] || info.events[0] || '';
     const items = bds.map(b => `<div class="bd">${b.age === 0 ? '👶' : '🎂'}${esc(b.name)}${b.age ? b.age + '歳' : ''}</div>`)
       .concat(evs.map(e => `<div class="ev" style="background:${evColor(e)}">${S.show === 'both' && ICON[e.owner] ? avatar(e.owner) : ''}<span>${esc(evLabel(e))}</span></div>`));
-    const SLOTS = 3;
     let cellItems = items.length > SLOTS ? items.slice(0, SLOTS - 1).join('') + `<div class="more">ほか${items.length - SLOTS + 1}件</div>` : items.join('');
     if (hn && items.length < SLOTS) cellItems = `<div class="hn${info.holiday ? ' isHol' : ''}">${esc(hn)}</div>` + cellItems;
     html += `<div class="${cls.join(' ')}" data-d="${s}">
@@ -281,6 +282,21 @@ $('#grid').onclick = e => { const c = e.target.closest('.cell'); if (!c) return;
   if (d === selDay) { openDay(d); return; }
   if (d.slice(0, 7) !== `${cur.y}-${pad(cur.m)}`) { const p = parseYmd(d); cur = { y: p.y, m: p.m }; selDay = d; render(); return; }
   selDay = d; $('#grid').querySelectorAll('.cell.sel').forEach(x => x.classList.remove('sel')); c.classList.add('sel'); drawDayList(); };
+// 画面の高さに合わせてマスの高さを決める（下の予定一覧が必ず見えるように）
+let lastWeeks = 5;
+function fitGrid(weeks) {
+  weeks = weeks || lastWeeks; lastWeeks = weeks;
+  const main = $('#main'), grid = $('#grid'), list = $('#dayList');
+  const other = ['#head', '#week', '#bar', '#copy'].reduce((a, q) => a + ($(q) ? $(q).offsetHeight : 0), 0) + 20;
+  const minList = Math.max(150, window.innerHeight * 0.22);
+  const avail = main.clientHeight - other - minList;
+  const ideal = 92 * S.fs;
+  const h = Math.max(48, Math.min(ideal, Math.floor(avail / weeks)));
+  grid.style.gridAutoRows = h + 'px';
+  document.body.classList.toggle('tight', h < 70);
+  return h;
+}
+let rzT; window.addEventListener('resize', () => { clearTimeout(rzT); rzT = setTimeout(render, 150); });
 function drawDayList() {
   const s = selDay; if (!s) return; const p = parseYmd(s); const info = K.info(p.y, p.m, p.d);
   const evs = eventsOn(info.n); const bds = birthdaysOn(p.y, p.m, p.d);

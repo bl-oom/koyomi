@@ -1,5 +1,5 @@
 'use strict';
-const VERSION = 'ver 3.16';
+const VERSION = 'ver 3.17';
 let selDay = null;
 const MIN_YEAR = 1953;
 const K = window.Koyomi;
@@ -842,8 +842,11 @@ function refreshView() {
 function readSyncLink() {
   const h = location.hash; if (!h.startsWith('#sync=')) return false;
   const q = new URLSearchParams(h.slice(1)); const url = q.get('sync'), key = q.get('k');
-  history.replaceState(null, '', location.pathname);
-  if (url && key && /^https:\/\/script\.google\.com\//.test(url)) { S.sync = { url, key, last: 0 }; saveS(); return true; }
+  // アドレスは書き換えない（LINEの「ブラウザで開く」やホーム画面に追加しても同期が引き継がれるように）
+  if (url && key && /^https:\/\/script\.google\.com\//.test(url)) {
+    if (S.sync && S.sync.url === url && S.sync.key === key) return false;
+    S.sync = { url, key, last: 0 }; saveS(); return true;
+  }
   return false;
 }
 setInterval(() => { if (!document.hidden) syncNow(); }, 60000);

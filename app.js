@@ -1,5 +1,5 @@
 'use strict';
-const VERSION = 'ver 2.00';
+const VERSION = 'ver 2.01';
 const K = window.Koyomi;
 const $ = s => document.querySelector(s);
 const pad = n => String(n).padStart(2, '0');
@@ -47,6 +47,28 @@ function put(kind, rec, quiet) { rec.updated = Date.now(); DB[kind][rec.id] = re
 function del(kind, id) { const r = DB[kind][id]; if (!r) return; r.deleted = true; put(kind, r); }
 const list = kind => Object.values(DB[kind]).filter(r => !r.deleted);
 const NAME = o => (DB.person['p_' + o] || {}).name || (o === 'f' ? '美之' : '博美');
+const isAdmin = () => S.me === 'admin';
+async function sha(t) { const b = await crypto.subtle.digest('SHA-256', new TextEncoder().encode('koyomi-admin:' + t)); return [...new Uint8Array(b)].map(x => x.toString(16).padStart(2, '0')).join(''); }
+async function becomeAdmin() {
+  const m = DB.meta.admin;
+  const inp = '<input class="inp" id="dlgPin" type="password" inputmode="numeric" autocomplete="off" placeholder="パスワード" style="margin-top:12px">';
+  if (!m || m.deleted || !m.hash) {
+    const r = await dialog('管理者のパスワードを決めてください。\n（ほかのスマホで管理者に入るときに使います）', [['決める', 'ok', 'primary'], ['やめる', null]], inp + '<input class="inp" id="dlgPin2" type="password" inputmode="numeric" autocomplete="off" placeholder="もう一度" style="margin-top:8px">');
+    if (!r) return false;
+    const a = document.getElementById('dlgPin').value, b = document.getElementById('dlgPin2').value;
+    if (a.length < 4) { await alertBox('4文字以上にしてください'); return becomeAdmin(); }
+    if (a !== b) { await alertBox('2回の入力がちがいます'); return becomeAdmin(); }
+    put('meta', { id: 'admin', hash: await sha(a) }); return true;
+  }
+  const r = await dialog('管理者のパスワードを入れてください', [['入る', 'ok', 'primary'], ['やめる', null]], inp);
+  if (!r) return false;
+  if (await sha(document.getElementById('dlgPin').value) === DB.meta.admin.hash) return true;
+  await alertBox('パスワードがちがいます'); return false;
+}
+async function setMe(v) {
+  if (v === 'admin' && !isAdmin() && !(await becomeAdmin())) return false;
+  S.me = v; S.show = v === 'admin' ? 'both' : v; saveS(); return true;
+}
 const personName = id => (DB.person[id] || {}).name || '';
 persist();
 
@@ -224,7 +246,7 @@ $('#grid').onclick = e => { const c = e.target.closest('.cell'); if (c) openDay(
   g.addEventListener('touchend', e => { if (x0 == null) return; const dx = e.changedTouches[0].clientX - x0, dy = e.changedTouches[0].clientY - y0; if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.5) move(dx < 0 ? 1 : -1); x0 = null; }, { passive: true });
 })();
 const other = o => o === 'f' ? 'm' : 'f';
-$('#bWho').onclick = () => { const me = S.me || 'f'; const order = [me, 'both', other(me)]; S.show = order[(order.indexOf(S.show) + 1) % 3]; saveS(); render(); toast(S.show === 'both' ? 'ふたりの予定を表示' : NAME(S.show) + 'の予定だけ表示'); };
+$('#bWho').onclick = () => { const me = S.me || 'f'; const order = me === 'admin' ? ['both', 'f', 'm'] : [me, 'both', other(me)]; S.show = order[(order.indexOf(S.show) + 1) % 3]; saveS(); render(); toast(S.show === 'both' ? 'ふたりの予定を表示' : NAME(S.show) + 'の予定だけ表示'); };
 $('#bAdd').onclick = () => openEdit(null, todayStr());
 $('#bPhoto').onclick = () => pickPhotos(null);
 $('#bFind').onclick = openFind;
@@ -358,7 +380,7 @@ function openEdit(ev, date) {
   $('#fDate').value = ev ? ev.date : date;
   $('#fEnd').value = ev && ev.end ? ev.end : '';
   $('#fMemo').value = ev ? ev.memo || '' : '';
-  const owner = ev ? ev.owner : (S.show === 'both' ? me : S.show);
+  const owner = ev ? ev.owner : (S.show === 'both' ? (me === 'admin' ? 'f' : me) : S.show);
   segSet('#fOwner', owner);
   segSet('#fRepeat', ev ? ev.repeat || 'none' : 'none');
   F.who = ev ? [...(ev.who || [])] : []; F.place = ev ? ev.place || '' : ''; F.start = ev ? ev.start || '' : ''; F.stop = ev ? ev.stop || '' : '';
@@ -552,7 +574,7 @@ $('#filePhoto').onchange = async e => {
       const f = files[i];
       const taken = await exifDate(f);
       const conv = await resize(f);
-      const rec = { id: uid(), date: photoTarget || (taken ? taken.slice(0, 10) : null), taken: taken || '', owner: S.me || 'f' };
+      const rec = { id: uid(), date: photoTarget || (taken ? taken.slice(0, 10) : null), taken: taken || '', owner: isAdmin() ? 'f' : (S.me || 'f') };
       await blobPut(rec.id + '_f', conv.full); await blobPut(rec.id + '_t', conv.thumb);
       if (!rec.date) { unknown.push(rec); continue; }
       put('photo', rec, true); done[rec.date] = (done[rec.date] || 0) + 1;
@@ -645,7 +667,7 @@ $('#vDel').onclick = async () => {
 // ===== 同期 =====
 let syncing = false, syncTimer = null, syncState = '';
 function setSyncState(s) { syncState = s; drawCopy(); const el = document.getElementById('sSyncState'); if (el) el.textContent = s; }
-function drawCopy() { $('#copy').textContent = `こよみ帳 ${VERSION}　© 2026 bl-oom Inc.` + (S.sync ? `　${syncState}` : ''); }
+function drawCopy() { $('#copy').textContent = (isAdmin() ? '🔑管理者　' : '') + `こよみ帳 ${VERSION}　© 2026 bl-oom Inc.` + (S.sync ? `　${syncState}` : ''); }
 function scheduleSync(ms) { if (!S.sync) return; clearTimeout(syncTimer); syncTimer = setTimeout(syncNow, ms ?? 1500); }
 async function api(method, params) {
   const u = S.sync.url;
@@ -723,8 +745,8 @@ function openSettings() {
   const fsBtns = [[1, '標準'], [1.15, '大きめ'], [1.3, '特大']].map(([v, t]) => `<button data-v="${v}" class="${S.fs == v ? 'on' : ''}">${t}</button>`).join('');
   $('#sBody').innerHTML = `
   <button class="wbtn" id="sHelp" style="margin:0 0 14px;background:var(--accent);color:#fff">📖 使い方を見る</button>
-  <div class="card"><h4>このスマホを使う人</h4><div class="seg" id="sMe"><button data-v="f" class="${S.me === 'f' ? 'on' : ''}">${avatar('f')}${esc(NAME('f'))}</button><button data-v="m" class="${S.me === 'm' ? 'on' : ''}">${avatar('m')}${esc(NAME('m'))}</button></div>
-    <p>アプリを開くと、いつもここで選んだ人のカレンダーから始まります。</p></div>
+  <div class="card"><h4>このスマホを使う人</h4><div class="seg" id="sMe"><button data-v="f" class="${S.me === 'f' ? 'on' : ''}">${avatar('f')}${esc(NAME('f'))}</button><button data-v="m" class="${S.me === 'm' ? 'on' : ''}">${avatar('m')}${esc(NAME('m'))}</button><button data-v="admin" class="${isAdmin() ? 'on' : ''}">🔑管理者</button></div>
+    <p>アプリを開くと、いつもここで選んだ人のカレンダーから始まります。「管理者」は${esc(NAME('f'))}と${esc(NAME('m'))}の両方のカレンダーを見たり直したりできます（パスワードが必要）。</p>${isAdmin() ? '<button class="wbtn" id="sPin">管理者のパスワードを変える</button>' : ''}</div>
   <div class="card"><h4>ふたりの同期</h4>
     <p class="sync" id="sSyncState">${S.sync ? esc(syncState || '準備中') : 'まだつながっていません'}</p>
     <p>${S.sync ? '予定・人・場所・写真・アイコンが、美之と博美のスマホで同じになります。' : '「つなぐリンク」を開くと、2台のスマホで予定が同じになります。'}</p>
@@ -751,7 +773,8 @@ function openSettings() {
 }
 $('#sBody').onclick = e => {
   const b = e.target.closest('button'); if (!b) return;
-  if (b.closest('#sMe')) { S.me = b.dataset.v; S.show = S.me; saveS(); openSettings(); }
+  if (b.closest('#sMe')) { setMe(b.dataset.v).then(() => openSettings()); }
+  else if (b.id === 'sPin') { (async () => { const ok = await confirmBox('管理者のパスワードを変えますか？'); if (!ok) return; del('meta', 'admin'); await becomeAdmin(); openSettings(); })(); }
   else if (b.closest('#sFs')) { S.fs = Number(b.dataset.v); saveS(); document.documentElement.style.setProperty('--fs', S.fs); openSettings(); }
   else if (b.closest('#sVeil')) { S.veil = Number(b.dataset.v); saveS(); document.documentElement.style.setProperty('--veil', S.veil); document.querySelectorAll('#sVeil button').forEach(x => x.classList.toggle('on', x === b)); }
   else if (b.dataset.icon) { iconTarget = b.dataset.icon; $('#fileIcon').value = ''; $('#fileIcon').click(); }
@@ -874,12 +897,15 @@ async function askDate(msg, def) {
 // ===== はじめて =====
 async function firstRun() {
   if (S.me) return;
-  const who = await dialog('こよみ帳へようこそ。\nこのスマホを使うのはどなたですか？\n（次からは、いつもこの人のカレンダーから開きます）', [[NAME('f'), 'f', 'primary'], [NAME('m'), 'm', 'primary']]);
-  S.me = who; S.show = who; saveS(); render();
+  while (true) {
+    const who = await dialog('こよみ帳へようこそ。\nこのスマホを使うのはどなたですか？\n（次からは、いつもこの人のカレンダーから開きます）', [[NAME('f'), 'f', 'primary'], [NAME('m'), 'm', 'primary'], ['🔑 管理者（拓馬）', 'admin']]);
+    if (await setMe(who)) break;
+  }
+  render();
 }
 (async () => {
   const linked = readSyncLink();
-  if (S.me) { S.show = S.me; saveS(); }
+  if (S.me) { S.show = S.me === 'admin' ? 'both' : S.me; saveS(); }
   drawCopy();
   if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => { });
   await migrate().catch(e => console.error(e));

@@ -1,5 +1,5 @@
 'use strict';
-const VERSION = 'ver 3.17';
+const VERSION = 'ver 3.18';
 let selDay = null;
 const MIN_YEAR = 1953;
 const K = window.Koyomi;
@@ -1031,7 +1031,7 @@ async function firstRun() {
   const linked = readSyncLink();
   if (S.me) { S.show = S.me === 'admin' ? 'both' : S.me; saveS(); }
   drawCopy();
-  if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => { });
+  if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).then(r => r.update()).catch(() => { });
   await migrate().catch(e => console.error(e));
   await Promise.all([applyBg().catch(() => { }), loadIcons().catch(() => { })]);
   render();

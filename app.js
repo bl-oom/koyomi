@@ -1,5 +1,5 @@
 'use strict';
-const VERSION = 'ver 2.02';
+const VERSION = 'ver 2.03';
 const K = window.Koyomi;
 const $ = s => document.querySelector(s);
 const pad = n => String(n).padStart(2, '0');
@@ -128,7 +128,10 @@ function eventsOn(n, show) {
   }
   return out.sort((a, b) => (a.start || '').localeCompare(b.start || '') || (a.title || '').localeCompare(b.title || ''));
 }
-const evColor = e => e.color || (e.owner === 'm' ? COLORS[1] : COLORS[0]);
+const PCOLORS = ['#2f6fa8', '#c0466a', '#3f8f5a', '#c9822b', '#7a52a8', '#5f6b75', '#c4432e', '#2a8f93', '#8a5a2b', '#d4639a', '#1f8a70', '#3b3b98'];
+const ownerColor = o => (S.pcolor && S.pcolor[o]) || (o === 'm' ? COLORS[1] : COLORS[0]);
+const ownColor = e => e.color && !(e.color === COLORS[0] && e.owner !== 'm') && !(e.color === COLORS[1] && e.owner === 'm') ? e.color : '';
+const evColor = e => ownColor(e) || ownerColor(e.owner);
 const whoNames = e => (e.who || []).map(personName).filter(Boolean);
 const evLabel = e => { const w = whoNames(e); return (e.stamp || '') + (w.length ? w.join('・') + ' ' : '') + (e.title || ''); };
 const placeName = id => (DB.place[id] || {}).name || '';
@@ -172,15 +175,31 @@ let iconTarget = 'f';
 $('#fileIcon').onchange = async e => {
   const f = e.target.files[0]; if (!f) return;
   busy('アイコンを入れています…');
-  try { const t = (await resize(f)).thumb; await blobPut('icon_' + iconTarget, t); LS.set('iconFile_' + iconTarget, null); put('meta', { id: 'icon_' + iconTarget, local: true }); await loadIcons(); busy(false); toast('アイコンを変えました'); openSettings(); }
+  try { const t = (await resize(f)).thumb; const old = DB.meta['icon_' + iconTarget] || {}; await blobPut('icon_' + iconTarget, t); LS.set('iconFile_' + iconTarget, null); put('meta', { id: 'icon_' + iconTarget, local: true, oldFile: old.deleted ? '' : (old.fileId || old.oldFile || '') }); await loadIcons(); busy(false); toast('アイコンを変えました'); openSettings(); }
   catch (err) { busy(false); alertBox('アイコンに入れられませんでした'); }
 };
 
 // ===== 背景（この端末だけ） =====
 const VEILS = [[.5, 'うすく'], [.68, 'ふつう'], [.82, 'しっかり']];
 let bgUrl = null, bgType = null;
-async function applyBg() {
-  const rec = await miscGet('bg').catch(() => null);
+const SYNC_VIDEO_MAX = 20 * 1024 * 1024;
+async function bgSource() {
+  // 管理者：美之・博美だけを見ているときは、その人の背景
+  if (isAdmin() && (S.show === 'f' || S.show === 'm')) {
+    const m = DB.meta['bg_' + S.show];
+    if (!m || m.deleted || !m.fileId) return null;
+    let blob = LS.get('bgFile_' + S.show, null) === m.fileId ? await blobGet('bgc_' + S.show) : null;
+    if (!blob && S.sync) { blob = await fetchFile(m.fileId).catch(() => null); if (blob) { await blobPut('bgc_' + S.show, blob); LS.set('bgFile_' + S.show, m.fileId); } }
+    return blob ? { blob, type: m.type } : null;
+  }
+  return await miscGet('bg').catch(() => null);
+}
+let bgKey = '';
+async function applyBg(force) {
+  const key = isAdmin() ? 'admin:' + S.show + ':' + ((DB.meta['bg_' + S.show] || {}).fileId || '') : 'own';
+  if (!force && key === bgKey && bgKey !== 'own') return;
+  bgKey = key;
+  const rec = await bgSource();
   const box = $('#bg');
   if (bgUrl) { URL.revokeObjectURL(bgUrl); bgUrl = null; }
   box.innerHTML = '';
@@ -193,6 +212,12 @@ async function applyBg() {
   } else { const im = new Image(); im.src = bgUrl; box.appendChild(im); }
   document.body.classList.add('hasbg');
 }
+function markBgChanged(type, size) {
+  if (isAdmin() || !S.me) return;
+  const old = DB.meta['bg_' + S.me] || {};
+  if (!type) { if (old.fileId) del('meta', 'bg_' + S.me); return; }
+  put('meta', { id: 'bg_' + S.me, type, local: true, tooBig: size > SYNC_VIDEO_MAX, oldFile: old.fileId || old.oldFile || '' });
+}
 $('#fileBg').onchange = async e => {
   const f = e.target.files[0]; if (!f) return;
   const isVideo = f.type.startsWith('video/');
@@ -201,7 +226,9 @@ $('#fileBg').onchange = async e => {
   try {
     let blob = f; if (!isVideo) blob = (await resize(f)).full;
     await miscPut({ id: 'bg', type: isVideo ? 'video' : 'image', blob, added: Date.now() });
-    await applyBg(); busy(false); toast('背景を変えました'); openSettings();
+    markBgChanged(isVideo ? 'video' : 'image', blob.size);
+    await applyBg(true); busy(false); toast('背景を変えました'); openSettings();
+    if (isVideo && blob.size > SYNC_VIDEO_MAX && !isAdmin()) alertBox('この動画は大きいので、このスマホだけの背景になります。\n（管理者の画面にも出したいときは、20MBまでの短い動画にしてください）');
   } catch (err) { busy(false); alertBox('背景に入れられませんでした'); }
 };
 
@@ -246,7 +273,7 @@ $('#grid').onclick = e => { const c = e.target.closest('.cell'); if (c) openDay(
   g.addEventListener('touchend', e => { if (x0 == null) return; const dx = e.changedTouches[0].clientX - x0, dy = e.changedTouches[0].clientY - y0; if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.5) move(dx < 0 ? 1 : -1); x0 = null; }, { passive: true });
 })();
 const other = o => o === 'f' ? 'm' : 'f';
-$('#bWho').onclick = () => { const me = S.me || 'f'; const order = me === 'admin' ? ['both', 'f', 'm'] : [me, 'both', other(me)]; S.show = order[(order.indexOf(S.show) + 1) % 3]; saveS(); render(); toast(S.show === 'both' ? 'ふたりの予定を表示' : NAME(S.show) + 'の予定だけ表示'); };
+$('#bWho').onclick = () => { const me = S.me || 'f'; const order = me === 'admin' ? ['both', 'f', 'm'] : [me, 'both', other(me)]; S.show = order[(order.indexOf(S.show) + 1) % 3]; saveS(); render(); applyBg(); toast(S.show === 'both' ? 'ふたりの予定を表示' : NAME(S.show) + 'の予定だけ表示'); };
 $('#bAdd').onclick = () => openEdit(null, todayStr());
 $('#bPhoto').onclick = () => pickPhotos(null);
 $('#bFind').onclick = openFind;
@@ -354,7 +381,7 @@ let editing = null; const F = {};
 function segSet(id, v) { document.querySelectorAll(id + ' button').forEach(b => b.classList.toggle('on', b.dataset.v === String(v))); }
 function segGet(id) { const b = document.querySelector(id + ' button.on'); return b ? b.dataset.v : null; }
 ['#fOwner', '#fRepeat'].forEach(id => $(id).onclick = e => { const b = e.target.closest('button'); if (!b) return; segSet(id, b.dataset.v);
-  if (id === '#fOwner') { if (!F.colorTouched) { F.color = b.dataset.v === 'm' ? COLORS[1] : COLORS[0]; drawColors(); } F.who = F.who.filter(w => w !== 'p_' + b.dataset.v); drawWho(); } });
+  if (id === '#fOwner') { if (!F.colorTouched) { F.color = ownerColor(b.dataset.v); drawColors(); } F.who = F.who.filter(w => w !== 'p_' + b.dataset.v); drawWho(); } });
 $('#fStamps').innerHTML = STAMPS.map(s => `<button data-s="${s}">${s || 'なし'}</button>`).join('');
 $('#fStamps').querySelector('button').style.fontSize = '14px';
 $('#fStamps').onclick = e => { const b = e.target.closest('button'); if (!b) return; F.stamp = b.dataset.s; drawStamps(); };
@@ -394,7 +421,7 @@ function openEdit(ev, date) {
   segSet('#fOwner', owner);
   segSet('#fRepeat', ev ? ev.repeat || 'none' : 'none');
   F.who = ev ? [...(ev.who || [])] : []; F.place = ev ? ev.place || '' : ''; F.start = ev ? ev.start || '' : ''; F.stop = ev ? ev.stop || '' : '';
-  F.stamp = ev ? ev.stamp || '' : ''; F.color = ev ? evColor(ev) : (owner === 'm' ? COLORS[1] : COLORS[0]); F.colorTouched = !!(ev && ev.color);
+  F.stamp = ev ? ev.stamp || '' : ''; F.color = ev ? evColor(ev) : ownerColor(owner); F.colorTouched = !!(ev && ownColor(ev));
   const len = ev && ev.end ? dnOf(ev.end) - dnOf(ev.date) + 1 : 1; F.custom = ![1, 2, 3, 7].includes(len);
   drawWho(); drawPlace(); drawTimes(); drawSpan(); drawStamps(); drawColors();
   $('#eDel').classList.toggle('hide', !ev);
@@ -408,7 +435,7 @@ function saveEdit() {
   let end = $('#fEnd').value; if (end && end <= d) end = '';
   const rec = Object.assign(editing ? { ...editing } : { id: uid(), created: Date.now() }, {
     title, date: d, end, owner: segGet('#fOwner'), who: F.who, place: F.place, start: F.start, stop: F.stop,
-    repeat: segGet('#fRepeat'), memo: $('#fMemo').value.trim(), stamp: F.stamp, color: F.color
+    repeat: segGet('#fRepeat'), memo: $('#fMemo').value.trim(), stamp: F.stamp, color: F.color === ownerColor(segGet('#fOwner')) ? '' : F.color
   });
   put('ev', rec); hide('edit'); toast('保存しました');
   if ($('#day').classList.contains('on')) openDay(dayCur); else if ($('#find').classList.contains('on')) runFind(); else render();
@@ -717,8 +744,16 @@ async function syncNow() {
     for (const o of ['f', 'm']) {
       const m = DB.meta['icon_' + o]; if (!m || m.deleted || m.fileId) continue;
       const bl = await blobGet('icon_' + o); if (!bl) continue;
-      const a = await api('POST', { action: 'upload', b64: await toB64(bl), name: 'icon_' + o + '.jpg' });
+      const a = await api('POST', { action: 'upload', b64: await toB64(bl), name: 'icon_' + o + '.jpg', replace: m.oldFile || '' });
       LS.set('iconFile_' + o, a.fileId); put('meta', { id: 'icon_' + o, fileId: a.fileId }, true);
+    }
+    if (S.me === 'f' || S.me === 'm') {
+      const m = DB.meta['bg_' + S.me];
+      if (m && !m.deleted && !m.fileId && !m.tooBig) {
+        const r = await miscGet('bg');
+        if (r && r.blob) { const a = await api('POST', { action: 'upload', b64: await toB64(r.blob), name: 'bg_' + S.me + (m.type === 'video' ? '.mp4' : '.jpg'), type: r.blob.type || (m.type === 'video' ? 'video/mp4' : 'image/jpeg'), replace: m.oldFile || '' });
+          put('meta', { id: 'bg_' + S.me, type: m.type, fileId: a.fileId }, true); }
+      }
     }
     // 変更を送る
     if (DIRTY.size) {
@@ -740,7 +775,7 @@ async function syncNow() {
       }
     }
     S.sync.last = res.now; saveS(); persist();
-    if (iconChanged) await loadIcons();
+    if (iconChanged) { await loadIcons(); if (isAdmin()) applyBg(); }
     if (changed) refreshView();
     const t = new Date(); setSyncState(`同期済み ${pad(t.getHours())}:${pad(t.getMinutes())}`);
   } catch (e) { console.error(e); setSyncState('同期できませんでした'); }
@@ -778,9 +813,11 @@ function openSettings() {
   <div class="card"><h4>アイコン</h4><div class="icgrid">${['f', 'm'].map(o => `<div>${avatar(o)}<div class="nm">${esc(NAME(o))}</div><button class="wbtn" data-icon="${o}">写真を選ぶ</button><button class="wbtn${ICON[o] ? '' : ' hide'}" data-icondel="${o}">消す</button></div>`).join('')}</div>
     <p>好きな写真を選ぶと、丸く切り抜いてアイコンにします。</p></div>
   <div class="card"><h4>人の登録・誕生日</h4><p>「だれが」でえらぶ人と、誕生日（連絡先からも読めます）。名前の変更もここからできます。</p><button class="wbtn" id="sPeople">人の登録・誕生日を開く</button></div>
+  <div class="card"><h4>予定の色</h4><p>それぞれの人の予定の色を変えられます。このスマホだけの設定です（相手のスマホは変わりません）。</p>
+    ${['f', 'm'].map(o => `<div style="display:flex;align-items:center;gap:8px;margin:10px 0 6px;font-weight:700">${avatar(o)}${esc(NAME(o))}の予定<span class="ev" style="background:${ownerColor(o)};font-size:13px;padding:2px 8px;margin-left:auto">例：病院</span></div><div class="colors" data-pc="${o}">${PCOLORS.map(c => `<button data-c="${c}" style="background:${c}" class="${c === ownerColor(o) ? 'on' : ''}"></button>`).join('')}</div>`).join('')}</div>
   <div class="card"><h4>文字の大きさ</h4><div class="seg" id="sFs">${fsBtns}</div></div>
   <div class="card"><h4>背景の写真・動画</h4><div id="sBgPrev"></div>
-    <p>好きな写真か動画を1つ選べます。動画はくりかえし流れます（音は出ません）。このスマホだけの設定です。</p>
+    <p>好きな写真か動画を1つ選べます。動画はくりかえし流れます（音は出ません）。${isAdmin() ? '管理者の画面では、美之・博美だけを表示しているときはその人の背景、ふたりのときはここで選んだ背景が出ます。' : '同期していれば、管理者の画面にも出ます。変えると前の背景は消えます。'}</p>
     <label style="font-size:14px;font-weight:700;color:var(--sub)">文字を見やすくする白さ</label>
     <div class="seg" id="sVeil" style="margin-top:6px">${VEILS.map(([v, t]) => `<button data-v="${v}" class="${(S.veil || .68) == v ? 'on' : ''}">${t}</button>`).join('')}</div>
     <div class="row2" style="margin-top:8px"><button class="wbtn" id="sBg">写真・動画を選ぶ</button><button class="wbtn" id="sBgOff">背景をなくす</button></div></div>
@@ -797,14 +834,15 @@ function openSettings() {
 }
 $('#sBody').onclick = e => {
   const b = e.target.closest('button'); if (!b) return;
-  if (b.closest('#sMe')) { setMe(b.dataset.v).then(() => openSettings()); }
+  if (b.closest('[data-pc]')) { const o = b.closest('[data-pc]').dataset.pc; S.pcolor = Object.assign({}, S.pcolor, { [o]: b.dataset.c }); saveS(); const y = $('#sBody').scrollTop; openSettings(); $('#sBody').scrollTop = y; return; }
+  if (b.closest('#sMe')) { setMe(b.dataset.v).then(() => { applyBg(true); openSettings(); }); }
   else if (b.id === 'sPin') { (async () => { const ok = await confirmBox('管理者のパスワードを変えますか？'); if (!ok) return; del('meta', 'admin'); await becomeAdmin(); openSettings(); })(); }
   else if (b.closest('#sFs')) { S.fs = Number(b.dataset.v); saveS(); document.documentElement.style.setProperty('--fs', S.fs); openSettings(); }
   else if (b.closest('#sVeil')) { S.veil = Number(b.dataset.v); saveS(); document.documentElement.style.setProperty('--veil', S.veil); document.querySelectorAll('#sVeil button').forEach(x => x.classList.toggle('on', x === b)); }
   else if (b.dataset.icon) { iconTarget = b.dataset.icon; $('#fileIcon').value = ''; $('#fileIcon').click(); }
   else if (b.dataset.icondel) { const o = b.dataset.icondel; storeDel('blobs', 'icon_' + o); del('meta', 'icon_' + o); loadIcons().then(openSettings); }
   else if (b.id === 'sBg') { $('#fileBg').value = ''; $('#fileBg').click(); }
-  else if (b.id === 'sBgOff') { miscDel('bg').then(applyBg).then(() => { toast('背景をなくしました'); openSettings(); }); }
+  else if (b.id === 'sBgOff') { miscDel('bg').then(() => { markBgChanged(null); return applyBg(true); }).then(() => { toast('背景をなくしました'); openSettings(); }); }
   else if (b.id === 'sPeople') { hide('settings'); openPeople(); }
   else if (b.id === 'sSyncNow') syncNow();
   else if (b.id === 'sHelp') location.href = 'help.html';

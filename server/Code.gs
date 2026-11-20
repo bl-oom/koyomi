@@ -2,6 +2,8 @@
 // 1) setup を1回実行（スプレッドシートと写真フォルダを作り、合言葉を作ります）
 // 2) ウェブアプリとしてデプロイ（実行ユーザー：自分 / アクセス：全員）
 var SHEET = 'data';
+var PARENT = '13doBV8GSvhd_suZtgyMba_E8SWeXgCSY'; // 会社ドライブ「開発アプリ/14_こよみ帳」
+function parent_() { try { return DriveApp.getFolderById(PARENT); } catch (e) { return DriveApp.getRootFolder(); } }
 function props_() { return PropertiesService.getScriptProperties(); }
 function ss_() {
   var id = props_().getProperty('SSID');
@@ -9,19 +11,21 @@ function ss_() {
   var s = SpreadsheetApp.create('こよみ帳データ（さわらないでください）');
   var sh = s.getSheets()[0]; sh.setName(SHEET); sh.appendRow(['kind', 'id', 'updated', 'deleted', 'srv', 'json']);
   props_().setProperty('SSID', s.getId());
+  try { DriveApp.getFileById(s.getId()).moveTo(parent_()); } catch (e) { }
   return s;
 }
 function sheet_() { return ss_().getSheetByName(SHEET); }
 function folder_() {
   var id = props_().getProperty('FOLDER');
   if (id) return DriveApp.getFolderById(id);
-  var f = DriveApp.createFolder('こよみ帳の写真（さわらないでください）');
+  var f = parent_().createFolder('こよみ帳の写真（さわらないでください）');
   props_().setProperty('FOLDER', f.getId());
   return f;
 }
 function setup() {
   if (!props_().getProperty('KEY')) props_().setProperty('KEY', Utilities.getUuid().replace(/-/g, '') + Utilities.getUuid().replace(/-/g, '').slice(0, 8));
   ss_(); folder_();
+  try { DriveApp.getFileById(ScriptApp.getScriptId()).moveTo(parent_()); } catch (e) { }
   Logger.log('KEY=' + props_().getProperty('KEY'));
 }
 function out_(o) { return ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON); }
@@ -48,6 +52,7 @@ function doGet(e) {
     return out_({ error: 'action' });
   } catch (err) { return out_({ error: String(err) }); }
 }
+function trash_(id) { if (!id) return; try { var ff = DriveApp.getFileById(id); if (isMine_(ff)) ff.setTrashed(true); } catch (x) { } }
 function isMine_(f) { var p = f.getParents(); var fid = props_().getProperty('FOLDER'); while (p.hasNext()) if (p.next().getId() === fid) return true; return false; }
 
 function doPost(e) {
@@ -58,6 +63,7 @@ function doPost(e) {
     if (b.action === 'upload') {
       var blob = Utilities.newBlob(Utilities.base64Decode(b.b64), b.type || 'image/jpeg', b.name || 'photo.jpg');
       var f = folder_().createFile(blob);
+      if (b.replace) trash_(b.replace);
       return out_({ fileId: f.getId() });
     }
     if (b.action === 'push') {
@@ -73,7 +79,7 @@ function doPost(e) {
           var r = idx[it.kind + '|' + it.id];
           if (r > 0) { if (Number(v[r - 2][2]) <= Number(it.updated)) sh.getRange(r, 1, 1, 6).setValues([row]); }
           else if (!r) { app.push(row); idx[it.kind + '|' + it.id] = -1; }
-          if (it.kind === 'photo' && it.deleted) { try { var j = JSON.parse(it.json); [j.fileId, j.thumbId].forEach(function (id) { if (id) { var ff = DriveApp.getFileById(id); if (isMine_(ff)) ff.setTrashed(true); } }); } catch (x) { } }
+          if ((it.kind === 'photo' || it.kind === 'meta') && it.deleted) { try { var j = JSON.parse(it.json); [j.fileId, j.thumbId].forEach(trash_); } catch (x) { } }
         });
         if (app.length) sh.getRange(sh.getLastRow() + 1, 1, app.length, 6).setValues(app);
         return out_({ ok: true, now: now });

@@ -1,5 +1,5 @@
 'use strict';
-const VERSION = 'ver 3.22';
+const VERSION = 'ver 3.23';
 let selDay = null;
 const MIN_YEAR = 1953;
 const K = window.Koyomi;
@@ -856,7 +856,7 @@ window.addEventListener('online', () => scheduleSync(500));
 
 // ===== 設定 =====
 function openSettings() {
-  const fsBtns = [[1, '標準'], [1.15, '大きめ'], [1.3, '特大']].map(([v, t]) => `<button data-v="${v}" class="${S.fs == v ? 'on' : ''}">${t}</button>`).join('');
+  const fsBtns = [[0.88, '小さめ'], [1, '標準'], [1.15, '大きめ'], [1.3, '特大']].map(([v, t]) => `<button data-v="${v}" class="${S.fs == v ? 'on' : ''}">${t}</button>`).join('');
   $('#sBody').innerHTML = `
   <button class="wbtn" id="sHelp" style="margin:0 0 14px;background:var(--accent);color:#fff">📖 使い方を見る</button>
   <div class="card"><h4>このスマホを使う人</h4><div class="seg" id="sMe"><button data-v="f" class="${S.me === 'f' ? 'on' : ''}">${avatar('f')}${esc(NAME('f'))}</button><button data-v="m" class="${S.me === 'm' ? 'on' : ''}">${avatar('m')}${esc(NAME('m'))}</button><button data-v="admin" class="${isAdmin() ? 'on' : ''}">🔑管理者</button></div>

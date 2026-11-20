@@ -1,5 +1,5 @@
 'use strict';
-const VERSION = 'ver 3.24';
+const VERSION = 'ver 3.25';
 let selDay = null;
 const MIN_YEAR = 1953;
 const K = window.Koyomi;

@@ -1,5 +1,5 @@
 'use strict';
-const VERSION = 'ver 3.31';
+const VERSION = 'ver 3.32';
 let selDay = null;
 const MIN_YEAR = 1953;
 const K = window.Koyomi;
@@ -245,7 +245,7 @@ function render() {
   const season = m >= 3 && m <= 5 ? 'spring' : m >= 6 && m <= 8 ? 'summer' : m >= 9 && m <= 11 ? 'autumn' : 'winter';
   document.body.dataset.season = season;
   $('#title').innerHTML = `<div class="ym mincho">${y}<small>年</small>${m}<small>月</small><span class="tri">▾</span></div><div class="sub"><span class="gl"></span>${K.wareki(y, m, 15)}　旧暦 ${ki.kyurekiName}　${ETO_ANIMAL[((y - 4) % 12 + 12) % 12]}年<span class="gl"></span></div>`;
-  drawNews(y, m);
+  newsVis(y, m);
   const first = K.dn(y, m, 1); const start = first - K.fromDn(first).w;
   const last = K.dn(m === 12 ? y + 1 : y, m === 12 ? 1 : m + 1, 1) - 1;
   const cellsN = Math.ceil((last - start + 1) / 7) * 7;
@@ -311,6 +311,7 @@ function drawDayList() {
   bds.forEach(b => h += `<div class="dlbd">${esc(bdayText(b))}</div>`);
   h += evs.length ? evs.map(e => `<button class="dli" data-id="${e.id}"><span class="cb" style="background:${evColor(e)}"></span>${S.show === 'both' || e.owner === 't' ? avatar(e.owner) : ''}<span class="tm">${e.start || '終日'}</span><span class="tt">${esc(evLabel(e))}${placeName(e.place) ? `<br><span class="pl">📍${esc(placeName(e.place))}</span>` : ''}</span></button>`).join('') : `<div class="dlempty">予定はありません</div>`;
   $('#dayList').innerHTML = h;
+  drawNews();
   document.body.style.setProperty('--my', isAdmin() ? T_ICON : ownerColor(S.me || 'f'));
 }
 $('#dayList').onclick = e => { if (e.target.closest('#dlAdd')) { openEdit(null, selDay || todayStr()); return; } if (e.target.closest('#dlOpen')) { openDay(selDay); return; } const r = e.target.closest('.dli'); if (r) { const ev = DB.ev[r.dataset.id]; if (ev) openEdit(ev); } };
@@ -370,29 +371,53 @@ $('#jBack').onclick = () => { if (!$('#jYears').classList.contains('hide')) open
 $('#jYears').onclick = openYears;
 $('#jToday').onclick = () => { const t = new Date(); cur = { y: t.getFullYear(), m: t.getMonth() + 1 }; hide('jump'); render(); };
 
-// ===== その月のできごと =====
-let newsTok = 0;
+// ===== その日のできごと =====
+let newsTok = 0, newsRes = null;
 function newsFuture(y, m) { const t = new Date(); return y * 12 + m > t.getFullYear() * 12 + t.getMonth() + 1; }
-function setNews(text) { const n = $('#news');
-  if (!text) n.classList.add('hide'); else { n.innerHTML = `<span class="nl">📰</span><span class="nt">${esc(text)}</span><span class="na">›</span>`; n.classList.remove('hide'); } }
-async function drawNews(y, m) {
-  const tok = ++newsTok; if (newsFuture(y, m)) { setNews(''); return; }
-  const hl = NEWS.hl(y, m); setNews(hl || 'この月のできごと');
-  const yr = await NEWS.year(y); if (tok !== newsTok) return;
-  const t = yr ? NEWS.pick(yr.w[m] || []) || NEWS.pick(yr.j[m] || []) : '';
-  if (!hl && t) setNews(t);
+function setNews(text, lbl) { const n = $('#news');
+  if (!text) n.classList.add('hide'); else { n.innerHTML = `<span class="nl">📰</span>${lbl ? `<span class="nlb">${esc(lbl)}</span>` : ''}<span class="nt">${esc(text)}</span><span class="na">›</span>`; n.classList.remove('hide'); } }
+function newsVis(y, m) { // 表示するかどうかは月で決める（マスの高さがずれないように）
+  if (newsFuture(y, m)) setNews(''); else if ($('#news').classList.contains('hide')) setNews(NEWS.hl(y, m) || '…'); }
+const dayItems = (yr, m, d) => yr ? { w: (yr.w[m] || []).filter(x => +x[0] === d), j: (yr.j[m] || []).filter(x => +x[0] === d) } : { w: [], j: [] };
+async function findNews(day) { // その日→前日→前々日…（最大7日前まで）
+  const t = todayStr(); let dn = dnOf(day > t ? t : day);
+  for (let k = 0; k <= 7; k++, dn--) {
+    const ds = strOf(dn), p = parseYmd(ds); const yr = await NEWS.year(p.y);
+    const it = dayItems(yr, p.m, p.d); const txt = NEWS.pick(it.w) || NEWS.pick(it.j);
+    if (txt) return { ds, txt, it, ok: true };
+    if (!yr) break;
+  }
+  return { ds: null, ok: false };
+}
+async function drawNews() {
+  const day = selDay; if (!day) return; const p0 = parseYmd(day); if (newsFuture(p0.y, p0.m)) return;
+  const tok = ++newsTok; newsRes = null;
+  const r = await findNews(day); if (tok !== newsTok) return; newsRes = { day, ...r };
+  if (r.ok) { const p = parseYmd(r.ds); setNews(r.txt, r.ds === day ? '' : `${p.m}/${p.d}`); }
+  else setNews(NEWS.hl(p0.y, p0.m) || 'この月のできごと');
 }
 $('#news').onclick = async () => {
-  const { y, m } = cur; $('#nTitle').textContent = `${y}年${m}月のできごと`;
+  const day = selDay || todayStr(); const { y, m, d } = parseYmd(day);
+  $('#nTitle').textContent = `${m}月${d}日のできごと`;
   $('#nBody').innerHTML = '<div class="nsrc">読み込み中…</div>'; show('newsS');
-  const hl = NEWS.hl(y, m); const yr = await NEWS.year(y);
-  let h = hl ? `<div class="nhl">📰 ${esc(hl)}</div>` : '';
-  const block = (title, items) => { if (!items.length) return ''; let last = null;
-    return `<div class="nsec">${title}</div>` + items.map(([d, t]) => { const same = d && d === last; last = d; return `<div class="nrow${same ? ' sub' : ''}"><span class="nd">${d && !same ? d + '日' : ''}</span><span class="nt">${esc(t)}</span></div>`; }).join(''); };
+  const r = newsRes && newsRes.day === day ? newsRes : await findNews(day);
+  const yr = await NEWS.year(y);
+  const block = (title, items, showD) => { if (!items.length) return ''; let last = null;
+    return `<div class="nsec">${title}</div>` + items.map(([dd, t]) => { const same = dd && dd === last; last = dd; return `<div class="nrow${same ? ' sub' : ''}">${showD ? `<span class="nd">${dd && !same ? dd + '日' : ''}</span>` : ''}<span class="nt">${esc(t)}</span></div>`; }).join(''); };
+  let h = '';
+  if (r.ok) {
+    const p = parseYmd(r.ds);
+    if (r.ds !== day) h += `<div class="nnote">この日の大きなニュースは見つからなかったので、${p.m}月${p.d}日のできごとです。</div>`;
+    h += block(`🌏 世界（${p.m}/${p.d}）`, r.it.w) + block(`🗾 日本（${p.m}/${p.d}）`, r.it.j);
+  } else h += `<div class="nsrc">${yr ? 'この日の前後のできごとは見つかりませんでした。' : 'インターネットにつながっていないため読み込めませんでした。'}</div>`;
+  const hl = NEWS.hl(y, m);
   const W = yr ? yr.w[m] || [] : [], J = yr ? yr.j[m] || [] : [];
-  h += block('🌏 世界', W) + block('🗾 日本', J);
-  if (!W.length && !J.length) h += `<div class="nsrc">${yr ? 'この月のできごとは見つかりませんでした。' : 'インターネットにつながっていないため読み込めませんでした。'}</div>`;
-  h += `<div class="nsrc">一覧の出典：ウィキペディア日本語版「<a href="https://ja.wikipedia.org/wiki/${encodeURIComponent(y + '年')}" target="_blank" rel="noopener">${y}年</a>」「<a href="https://ja.wikipedia.org/wiki/${encodeURIComponent(y + '年の日本')}" target="_blank" rel="noopener">${y}年の日本</a>」（CC BY-SA 4.0）</div>`;
+  if (hl || W.length || J.length) {
+    h += `<div class="nmon">${y}年${m}月のできごと（ぜんぶ）</div>`;
+    if (hl) h += `<div class="nhl">📰 ${esc(hl)}</div>`;
+    h += block('🌏 世界', W, true) + block('🗾 日本', J, true);
+  }
+  h += `<div class="nsrc">出典：ウィキペディア日本語版「<a href="https://ja.wikipedia.org/wiki/${encodeURIComponent(y + '年')}" target="_blank" rel="noopener">${y}年</a>」「<a href="https://ja.wikipedia.org/wiki/${encodeURIComponent(y + '年の日本')}" target="_blank" rel="noopener">${y}年の日本</a>」（CC BY-SA 4.0）</div>`;
   $('#nBody').innerHTML = h; $('#nBody').scrollTop = 0;
 };
 $('#nBack').onclick = () => hide('newsS');

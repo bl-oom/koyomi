@@ -421,6 +421,17 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
 .endWrap:not(.has) input{color:transparent}
 @media (max-width:380px){.dtGrid .dtin{font-size:15px}.endWrap .endPh{font-size:15px}}
 .endWrap.has input{padding-right:34px}
+#news{display:flex;align-items:center;gap:6px;margin:2px 14px 6px;padding:5px 12px;border-radius:999px;background:rgba(255,255,255,.55);border:1px solid rgba(120,90,60,.18);font-size:calc(12.5px*var(--fs));color:#4a3626;text-align:left;min-width:0;flex:none}
+#news.hide{display:none}
+#news .nt{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#news .nl{flex:none;font-weight:700;color:#8a5a2b}
+#news .na{flex:none;color:var(--sub)}
+#nBody .nhl{font-size:18px;font-weight:700;padding:14px 4px 10px;border-bottom:1px dashed #d9cdb8;margin-bottom:6px}
+#nBody .nrow{display:flex;gap:10px;padding:10px 4px;border-bottom:1px solid #eee5d6;font-size:15px;line-height:1.55}
+#nBody .nrow .nd{flex:none;width:3.2em;color:#8a5a2b;font-weight:700;text-align:right}
+#nBody .nrow.sub .nt{color:#5a4a3a}
+#nBody .nsrc{font-size:12px;color:var(--sub);padding:14px 4px 30px;line-height:1.6}
+#nBody .nsrc a{color:#8a5a2b}
 </style>
 </head>
 <body>
@@ -431,6 +442,7 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
     <div id="title"></div>
     <button class="navbtn" id="next" aria-label="次の月">›</button>
   </div>
+  <button id="news" class="hide"></button>
   <div id="week"><div>日</div><div>月</div><div>火</div><div>水</div><div>木</div><div>金</div><div>土</div></div>
   <div id="grid"></div>
   <div id="dayList"></div>
@@ -553,6 +565,15 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
   </div>
 </div>
 
+<div class="sheet" id="newsS">
+  <div class="shead">
+    <button class="hbtn" id="nBack">‹ 戻る</button>
+    <div class="t" id="nTitle">この月のできごと</div>
+    <div></div>
+  </div>
+  <div class="sbody" id="nBody"></div>
+</div>
+
 <!-- 写真ビューア -->
 <div class="sheet" id="viewer" style="z-index:15">
   <div class="shead">
@@ -595,6 +616,7 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
 
 <script src="koyomi-data.js"></script>
 <script src="koyomi.js"></script>
+<script src="news.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

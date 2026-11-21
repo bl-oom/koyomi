@@ -1,5 +1,5 @@
 'use strict';
-const VERSION = 'ver 3.29';
+const VERSION = 'ver 3.30';
 let selDay = null;
 const MIN_YEAR = 1953;
 const K = window.Koyomi;
@@ -245,6 +245,7 @@ function render() {
   const season = m >= 3 && m <= 5 ? 'spring' : m >= 6 && m <= 8 ? 'summer' : m >= 9 && m <= 11 ? 'autumn' : 'winter';
   document.body.dataset.season = season;
   $('#title').innerHTML = `<div class="ym mincho">${y}<small>年</small>${m}<small>月</small><span class="tri">▾</span></div><div class="sub"><span class="gl"></span>${K.wareki(y, m, 15)}　旧暦 ${ki.kyurekiName}　${ETO_ANIMAL[((y - 4) % 12 + 12) % 12]}年<span class="gl"></span></div>`;
+  drawNews(y, m);
   const first = K.dn(y, m, 1); const start = first - K.fromDn(first).w;
   const last = K.dn(m === 12 ? y + 1 : y, m === 12 ? 1 : m + 1, 1) - 1;
   const cellsN = Math.ceil((last - start + 1) / 7) * 7;
@@ -292,7 +293,7 @@ let lastWeeks = 5;
 function fitGrid(weeks) {
   weeks = weeks || lastWeeks; lastWeeks = weeks;
   const main = $('#main'), grid = $('#grid'), list = $('#dayList');
-  const other = ['#head', '#week', '#bar', '#copy'].reduce((a, q) => a + ($(q) ? $(q).offsetHeight : 0), 0) + 20;
+  const other = ['#head', '#news', '#week', '#bar', '#copy'].reduce((a, q) => a + ($(q) ? $(q).offsetHeight : 0), 0) + 20;
   const minList = Math.max(150, window.innerHeight * 0.22);
   const avail = main.clientHeight - other - minList;
   const ideal = 92 * S.fs;
@@ -368,6 +369,31 @@ $('#jBody').onclick = e => {
 $('#jBack').onclick = () => { if (!$('#jYears').classList.contains('hide')) openYears(); else hide('jump'); };
 $('#jYears').onclick = openYears;
 $('#jToday').onclick = () => { const t = new Date(); cur = { y: t.getFullYear(), m: t.getMonth() + 1 }; hide('jump'); render(); };
+
+// ===== その月のできごと =====
+let newsTok = 0;
+function newsFuture(y, m) { const t = new Date(); return y * 12 + m > t.getFullYear() * 12 + t.getMonth() + 1; }
+function setNews(text) { const n = $('#news');
+  if (!text) n.classList.add('hide'); else { n.innerHTML = `<span class="nl">📰</span><span class="nt">${esc(text)}</span><span class="na">›</span>`; n.classList.remove('hide'); } }
+async function drawNews(y, m) {
+  const tok = ++newsTok; if (newsFuture(y, m)) { setNews(''); return; }
+  const hl = NEWS.hl(y, m); setNews(hl || 'この月のできごと');
+  const yr = await NEWS.year(y); if (tok !== newsTok) return;
+  const items = yr && yr[m] || [];
+  if (!hl && items.length) setNews(NEWS.pick(items));
+}
+$('#news').onclick = async () => {
+  const { y, m } = cur; $('#nTitle').textContent = `${y}年${m}月のできごと`;
+  $('#nBody').innerHTML = '<div class="nsrc">読み込み中…</div>'; show('newsS');
+  const hl = NEWS.hl(y, m); const yr = await NEWS.year(y); const items = yr && yr[m] || [];
+  let h = hl ? `<div class="nhl">📰 ${esc(hl)}</div>` : '';
+  let last = null;
+  h += items.map(([d, t]) => { const same = d && d === last; last = d; return `<div class="nrow${same ? ' sub' : ''}"><span class="nd">${d && !same ? d + '日' : ''}</span><span class="nt">${esc(t)}</span></div>`; }).join('');
+  if (!items.length) h += `<div class="nsrc">${yr ? 'この月のできごとは見つかりませんでした。' : 'インターネットにつながっていないため読み込めませんでした。'}</div>`;
+  h += `<div class="nsrc">くわしい一覧の出典：ウィキペディア日本語版「<a href="https://ja.wikipedia.org/wiki/${encodeURIComponent(y + '年')}" target="_blank" rel="noopener">${y}年</a>」（CC BY-SA 4.0）</div>`;
+  $('#nBody').innerHTML = h; $('#nBody').scrollTop = 0;
+};
+$('#nBack').onclick = () => hide('newsS');
 
 // ===== 日の詳細 =====
 let dayCur = null;

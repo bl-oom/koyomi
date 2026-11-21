@@ -1,5 +1,5 @@
 'use strict';
-const VERSION = 'ver 3.30';
+const VERSION = 'ver 3.31';
 let selDay = null;
 const MIN_YEAR = 1953;
 const K = window.Koyomi;
@@ -379,18 +379,20 @@ async function drawNews(y, m) {
   const tok = ++newsTok; if (newsFuture(y, m)) { setNews(''); return; }
   const hl = NEWS.hl(y, m); setNews(hl || 'この月のできごと');
   const yr = await NEWS.year(y); if (tok !== newsTok) return;
-  const items = yr && yr[m] || [];
-  if (!hl && items.length) setNews(NEWS.pick(items));
+  const t = yr ? NEWS.pick(yr.w[m] || []) || NEWS.pick(yr.j[m] || []) : '';
+  if (!hl && t) setNews(t);
 }
 $('#news').onclick = async () => {
   const { y, m } = cur; $('#nTitle').textContent = `${y}年${m}月のできごと`;
   $('#nBody').innerHTML = '<div class="nsrc">読み込み中…</div>'; show('newsS');
-  const hl = NEWS.hl(y, m); const yr = await NEWS.year(y); const items = yr && yr[m] || [];
+  const hl = NEWS.hl(y, m); const yr = await NEWS.year(y);
   let h = hl ? `<div class="nhl">📰 ${esc(hl)}</div>` : '';
-  let last = null;
-  h += items.map(([d, t]) => { const same = d && d === last; last = d; return `<div class="nrow${same ? ' sub' : ''}"><span class="nd">${d && !same ? d + '日' : ''}</span><span class="nt">${esc(t)}</span></div>`; }).join('');
-  if (!items.length) h += `<div class="nsrc">${yr ? 'この月のできごとは見つかりませんでした。' : 'インターネットにつながっていないため読み込めませんでした。'}</div>`;
-  h += `<div class="nsrc">くわしい一覧の出典：ウィキペディア日本語版「<a href="https://ja.wikipedia.org/wiki/${encodeURIComponent(y + '年')}" target="_blank" rel="noopener">${y}年</a>」（CC BY-SA 4.0）</div>`;
+  const block = (title, items) => { if (!items.length) return ''; let last = null;
+    return `<div class="nsec">${title}</div>` + items.map(([d, t]) => { const same = d && d === last; last = d; return `<div class="nrow${same ? ' sub' : ''}"><span class="nd">${d && !same ? d + '日' : ''}</span><span class="nt">${esc(t)}</span></div>`; }).join(''); };
+  const W = yr ? yr.w[m] || [] : [], J = yr ? yr.j[m] || [] : [];
+  h += block('🌏 世界', W) + block('🗾 日本', J);
+  if (!W.length && !J.length) h += `<div class="nsrc">${yr ? 'この月のできごとは見つかりませんでした。' : 'インターネットにつながっていないため読み込めませんでした。'}</div>`;
+  h += `<div class="nsrc">一覧の出典：ウィキペディア日本語版「<a href="https://ja.wikipedia.org/wiki/${encodeURIComponent(y + '年')}" target="_blank" rel="noopener">${y}年</a>」「<a href="https://ja.wikipedia.org/wiki/${encodeURIComponent(y + '年の日本')}" target="_blank" rel="noopener">${y}年の日本</a>」（CC BY-SA 4.0）</div>`;
   $('#nBody').innerHTML = h; $('#nBody').scrollTop = 0;
 };
 $('#nBack').onclick = () => hide('newsS');

@@ -1,4 +1,4 @@
-const C='koyomi-v3.30';
+const C='koyomi-v3.31';
 const FILES=['./','index.html','koyomi.js','koyomi-data.js','news.js','app.js','manifest.webmanifest','icon-180.png','icon-192.png','icon-512.png','help.html','img/washi.jpg'];
 self.addEventListener('install',e=>{e.waitUntil(caches.open(C).then(c=>c.addAll(FILES)));self.skipWaiting();});
 self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==C).map(k=>caches.delete(k)))));self.clients.claim();});

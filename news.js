@@ -94,7 +94,7 @@ const NEWS = (() => {
       if (!m || !/^\*/.test(line)) continue;
       const lvl = line.match(/^\*+/)[0].length; let s = line.replace(/^\*+\s*/, '');
       if (lvl === 1) {
-        const dm = s.match(/^\[\[\d{1,2}月(\d{1,2})日\]\]\s*(?:[-－–―:：]\s*)?/);
+        const dm = s.match(/^\[\[\d{1,2}月(\d{1,2})日(?:\|[^\]]*)?\]\]\s*(?:[-－–―:：]\s*)?/);
         if (dm) { d = dm[1]; s = s.slice(dm[0].length); } else {
           const dm2 = s.match(/^\d{1,2}月(\d{1,2})日\s*[-－–―]\s*/); if (dm2) { d = dm2[1]; s = s.slice(dm2[0].length); } else d = '';
         }
@@ -105,17 +105,22 @@ const NEWS = (() => {
     return out;
   }
 
+  async function page(title) {
+    const r = await fetch(`https://ja.wikipedia.org/w/api.php?action=parse&page=${encodeURIComponent(title)}&prop=wikitext&format=json&formatversion=2&redirects=1&origin=*`);
+    const j = await r.json(); return j.parse ? parse(j.parse.wikitext) : {};
+  }
+  // 返り値 { w: {月: [[日, 文], ...]}, j: {...} } w=世界（◯◯年）, j=日本（◯◯年の日本）
   async function year(y) {
     if (mem[y]) return mem[y];
     const now = new Date(); const fresh = y < now.getFullYear() - 1 ? Infinity : 6 * 3600e3;
-    let c = null; try { c = await miscGet('news_' + y); } catch (e) {}
-    if (c && Date.now() - c.at < fresh) return (mem[y] = c.m);
+    let c = null; try { c = await miscGet('news2_' + y); } catch (e) {}
+    if (c && Date.now() - c.at < fresh) return (mem[y] = c.v);
     try {
-      const r = await fetch(`https://ja.wikipedia.org/w/api.php?action=parse&page=${encodeURIComponent(y + '年')}&prop=wikitext&format=json&formatversion=2&origin=*`);
-      const j = await r.json(); const m = parse(j.parse.wikitext);
-      try { await miscPut({ id: 'news_' + y, at: Date.now(), m }); } catch (e) {}
-      return (mem[y] = m);
-    } catch (e) { return c ? (mem[y] = c.m) : null; }
+      const [w, j] = await Promise.all([page(y + '年'), page(y + '年の日本').catch(() => ({}))]);
+      const v = { w, j };
+      try { await miscPut({ id: 'news2_' + y, at: Date.now(), v }); } catch (e) {}
+      return (mem[y] = v);
+    } catch (e) { return c ? (mem[y] = c.v) : null; }
   }
 
   function pick(items) {

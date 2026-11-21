@@ -1,5 +1,5 @@
 'use strict';
-const VERSION = 'ver 3.28';
+const VERSION = 'ver 3.29';
 let selDay = null;
 const MIN_YEAR = 1953;
 const K = window.Koyomi;
@@ -437,19 +437,10 @@ $('#fColors').onclick = e => { const b = e.target.closest('button'); if (!b) ret
 function drawWho() { const n = F.who.map(personName).filter(Boolean); $('#fWho').innerHTML = n.length ? `<span>${esc(n.join('・'))}</span><span class="arr">›</span>` : `<span class="ph">（本人）</span><span class="arr">›</span>`; }
 function drawPlace() { const n = placeName(F.place); $('#fPlace').innerHTML = n ? `<span>📍 ${esc(n)}</span><span class="arr">›</span>` : `<span class="ph">（なし）</span><span class="arr">›</span>`; }
 function drawTimes() { [['#fStart', F.start], ['#fStop', F.stop]].forEach(([id, v]) => { $(id).textContent = v || 'なし'; $(id).classList.toggle('ph', !v); }); }
-function drawSpan() {
-  const d = $('#fDate').value, e = $('#fEnd').value;
-  const n = d && e && e > d ? dnOf(e) - dnOf(d) + 1 : 1;
-  const preset = [1, 2, 3, 7].includes(n) && !F.custom ? n : (n === 1 && !F.custom ? 1 : 0);
-  $('#fSpan').querySelectorAll('button').forEach(b => b.classList.toggle('on', +b.dataset.n === preset));
-  $('#fEndBox').style.display = preset === 0 ? '' : 'none';
-}
-$('#fSpan').onclick = e => { const b = e.target.closest('button'); if (!b) return; const n = +b.dataset.n; const d = $('#fDate').value;
-  if (n === 0) { F.custom = true; if (!$('#fEnd').value && d) $('#fEnd').value = strOf(dnOf(d) + 1); }
-  else { F.custom = false; $('#fEnd').value = n > 1 && d ? strOf(dnOf(d) + n - 1) : ''; }
-  drawSpan(); };
-$('#fDate').onchange = () => { const b = $('#fSpan .on'); if (b && +b.dataset.n > 1) $('#fEnd').value = strOf(dnOf($('#fDate').value) + +b.dataset.n - 1); drawSpan(); };
-$('#fEnd').onchange = drawSpan;
+function drawSpan() { $('#fEndPh').parentNode.classList.toggle('has', !!$('#fEnd').value); }
+$('#fDate').onchange = () => { const d = $('#fDate').value, e = $('#fEnd').value; if (e && d && e <= d) $('#fEnd').value = ''; drawSpan(); };
+$('#fEnd').onchange = () => { const d = $('#fDate').value, e = $('#fEnd').value; if (e && d && e <= d) $('#fEnd').value = ''; drawSpan(); };
+$('#fEndX').onclick = () => { $('#fEnd').value = ''; drawSpan(); };
 $('#fStart').onclick = async () => { const v = await wheel('はじまりの時間', F.start || F.stop || '10:00'); if (v !== undefined) { F.start = v; drawTimes(); } };
 $('#fStop').onclick = async () => { const v = await wheel('おわりの時間', F.stop || (F.start ? pad(Math.min(23, +F.start.slice(0, 2) + 1)) + F.start.slice(2) : '11:00')); if (v !== undefined) { F.stop = v; drawTimes(); } };
 $('#fWho').onclick = async () => { const r = await pickWho(F.who, segGet('#fOwner')); if (r) { F.who = r; drawWho(); } };
@@ -471,7 +462,7 @@ function openEdit(ev, date) {
   const len = ev && ev.end ? dnOf(ev.end) - dnOf(ev.date) + 1 : 1; F.custom = ![1, 2, 3, 7].includes(len);
   drawWho(); drawPlace(); drawTimes(); drawSpan(); drawStamps(); drawColors();
   $('#eDel').classList.toggle('hide', !ev);
-  const hasMore = !!(ev && (ev.end || (ev.who || []).length || (ev.repeat && ev.repeat !== 'none') || ev.stamp || ev.memo || ownColor(ev) || ev.owner !== (S.me === 'admin' ? ev.owner : S.me)));
+  const hasMore = !!(ev && ((ev.who || []).length || (ev.repeat && ev.repeat !== 'none') || ev.stamp || ev.memo || ownColor(ev) || ev.owner !== (S.me === 'admin' ? ev.owner : S.me)));
   $('#fMore').style.display = hasMore ? '' : 'none'; $('#fMoreBtn').style.display = hasMore ? 'none' : '';
   $('#edit .sbody').scrollTop = 0;
   show('edit');
